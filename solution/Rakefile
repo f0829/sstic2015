@@ -2,7 +2,7 @@ namespace :sstic do
   desc 'prepare build'
   task :prebuild do
     Dir.mkdir 'images' unless Dir.exists? 'images'
-    Dir.glob("../stage-*/**/rk_*.jpg").each do |image|
+    Dir.glob("../stage-*/**/rk_*.[jpg][ipn][gf]").each do |image|
       FileUtils.copy(image, "images/" + File.basename(image))
     end
   end

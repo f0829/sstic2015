@@ -1,0 +1,1 @@
+../../stage-6/parse_tiff.rb
