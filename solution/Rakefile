@@ -13,9 +13,9 @@ namespace :sstic do
     `bundle exec asciidoctor main.asc`
     puts " -- HTML output at main.html"
 
-    #puts "Converting to EPub..."
-    #`bundle exec asciidoctor-epub3 main.asc`
-    #puts " -- Epub output at main.epub"
+    puts "Converting to EPub..."
+    `bundle exec asciidoctor-epub3 main.asc`
+    puts " -- Epub output at main.epub"
 
     puts "Converting to PDF ..."
     `bundle exec asciidoctor-pdf main.asc`
