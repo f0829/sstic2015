@@ -1,0 +1,1 @@
+ffmpeg -i demo3.avi -c:v libx264 -crf 35 -preset slow -acodec null -filter:v "setpts=0.5*PTS,scale=512:-1" -movflags +faststart demo.mp4
