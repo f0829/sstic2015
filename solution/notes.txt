@@ -1,1 +1,9 @@
 ffmpeg -i demo3.avi -c:v libx264 -crf 35 -preset slow -acodec null -filter:v "setpts=0.5*PTS,scale=512:-1" -movflags +faststart demo.mp4
+avconv -i demo.mp4 -c:v libvpx-vp9 -crf 10 -c:a null output.webm
+
+<video poster="movie.jpg" controls>
+	<source src="movie.webm" type='video/webm; codecs="vp8.0, vorbis"'>
+	<source src="movie.ogv" type='video/ogg; codecs="theora, vorbis"'>
+	<source src="movie.mp4" type='video/mp4; codecs="avc1.4D401E, mp4a.40.2"'>
+	<p>This is fallback content to display for user agents that do not support the video tag.</p>
+</video>

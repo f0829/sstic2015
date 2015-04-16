@@ -1,0 +1,7 @@
+montage 31570422.tga 1773100136.tga 1604401524.tga 71921642.tga 52809216.tga 457615433.tga 86520831.tga 838783866.tga -geometry +2+2 montage.png
+
+convert 31570422.tga -matte \( +clone -fuzz 1 -transparent \#04de9d \) -compose DstOut -composite step1.png
+
+# orange ff8a00
+# white  ffffff
+# green  04de9d
