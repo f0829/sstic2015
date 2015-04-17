@@ -1,0 +1,753 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?asciidoc-toc maxdepth="2"?>
+<?asciidoc-numbered?>
+<!DOCTYPE article [<!ENTITY % db5ent PUBLIC "-//FOPUB//ENTITIES Entities for DocBook 5" "db5.ent"> %db5ent;]>
+<article xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
+<info>
+<title>Challenge SSTIC 2015 </title>
+<subtitle>éléments de solution</subtitle>
+<date>2015-04-13</date>
+<author>
+<personname>
+<firstname>Julien</firstname>
+<surname>Perrot</surname>
+</personname>
+<email>perrot@gmail.com</email>
+</author>
+<authorinitials>JP</authorinitials>
+<revhistory>
+<revision>
+<revnumber>1.0</revnumber>
+<date>2015-04-13</date>
+<authorinitials>JP</authorinitials>
+</revision>
+</revhistory>
+</info>
+<simpara>Ce document présente la méthodologie suivie pour résoudre l&#8217;édition
+2015 du challenge SSTIC.</simpara>
+<section xml:id="_introduction">
+<title>Introduction</title>
+<warning>
+<simpara>à rédiger</simpara>
+</warning>
+</section>
+<section xml:id="_rubberducky">
+<title>Analyse d&#8217;une carte mémoire</title>
+<simpara>Le fichier <link xlink:href="http://static.sstic.org/challenge2015/challenge.zip">challenge.zip</link>
+téléchargé sur la page du challenge contient une image de carte SD, comme
+présenté ci-dessous :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ wget http://static.sstic.org/challenge2015/challenge.zip
+$ unzip challenge.zip
+Archive:  challenge.zip
+  inflating: sdcard.img
+$ file sdcard.img
+sdcard.img: DOS/MBR boot sector</programlisting>
+<simpara>Cette image peut être montée en loopback pour en examiner le contenu :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ sudo mount -o loop sdcard.img /mnt/loop
+$ ls -al /mnt/loop
+total 33472
+drwxr-xr-x 2 root root    16384 janv.  1  1970 .
+drwxr-xr-x 7 root root     4096 avril  3 19:54 ..
+-rwxr-xr-x 1 root root 34253730 mars  26 02:49 inject.bin</programlisting>
+<simpara>Un rapide examen du fichier <literal>inject.bin</literal> ne relève rien de particulier :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ file /mnt/loop/inject.bin
+/mnt/loop/inject.bin: data
+$ strings /mnt/loop/inject.bin | wc -l
+0</programlisting>
+<simpara>Par contre, la commande <literal>strings</literal> appelée directement sur le fichier image
+retourne deux chaînes intéressantes :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ strings sdcard.img|tail -n 2
+INJECT  BIN
+java -jar encoder.jar -i /tmp/duckyscript.txt</programlisting>
+<simpara>Le nom du fichier <literal>duckyscript.txt</literal> fait penser au
+<link xlink:href="http://hakshop.myshopify.com/products/usb-rubber-ducky-deluxe">Rubber Ducky</link>,
+outil bien connu des <link xlink:href="https://twitter.com/pentesteur">pentesteurs</link>.</simpara>
+<figure>
+<title>Rubber Ducky</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rubberducky.jpeg" align="center"/>
+</imageobject>
+<textobject><phrase>rubberducky</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>Un &#8220;Rubber Ducky&#8221; est une clé USB permettant de lancer un code exécutable
+sur le poste d&#8217;une victime, selon le principe suivant :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>la clé USB est connectée à l&#8217;ordinateur ;</simpara>
+</listitem>
+<listitem>
+<simpara>elle émule un périphérique de type clavier ;</simpara>
+</listitem>
+<listitem>
+<simpara>ce périphérique va simuler des frappes au clavier pour exécuter un script
+de décodage permettant de reconstituer la charge binaire finale
+(généralement un exécutable Windows) ;</simpara>
+</listitem>
+<listitem>
+<simpara>enfin, la charge finale est déclenchée sur le poste de la victime.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>La séquence de frappes clavier à simuler est décrite dans un fichier au format
+<link xlink:href="https://github.com/hak5darren/USB-Rubber-Ducky/wiki/Duckyscript">&#8220;Ducky Script&#8221;</link>.
+Ce fichier est ensuite compilé avec l&#8217;outil <literal>duckendoder</literal> pour obtenir un fichier
+binaire <literal>input.bin</literal> : au moment de la connexion de la clé USB,
+le micro-contrôleur ira lire le contenu de ce fichier pour démarrer l&#8217;attaque.</simpara>
+<simpara>L&#8217;objectif à ce stade est de pouvoir retrouver le code source du script à partir
+du fichier <literal>input.bin</literal> présent sur la carte SD. Heureusement, l&#8217;outil
+<link xlink:href="https://code.google.com/p/ducky-decode/source/browse/trunk/ducky-decode.pl?r=6"><literal>ducky-decode.pl</literal></link>
+permet justement de réaliser cette opération.</simpara>
+<simpara>Le lancement de ce script sur notre fichier <literal>input.bin</literal> retourne le résultat
+ suivant :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ ./ducky-decode.pl -f /mnt/loop/inject.bin
+00ff 007d
+GUI R
+
+DELAY 500
+
+ENTER
+
+DELAY 1000
+ c m d
+ENTER
+
+DELAY 50
+ p o w e r s h e l l
+SPACE
+ - e n c
+SPACE
+ Z g B 1 [...] D s A f Q A = 00a0
+ENTER
+ p o w e r s h e l l
+SPACE
+ - e n c
+SPACE
+ Z g B 1 [...] D s A f Q A = 00a0
+ [...]</programlisting>
+<simpara>La signification du paramètre <literal>-enc</literal> de <literal>powershell</literal> est détaillée sur la page
+<link xlink:href="https://technet.microsoft.com/fr-fr/library/hh847736.aspx">https://technet.microsoft.com/fr-fr/library/hh847736.aspx</link> : il permet de pouvoir
+passer des commandes à exécuter codées en base64. La valeur <literal>00a0</literal> correspond
+à un opcode Ducky Script inconnu de <literal>ducky-decode.pl</literal> et donc non décodé.</simpara>
+<simpara>On peut donc tenter d&#8217;extraire la chaîne passée en paramètre puis la décoder
+avec la commande <literal>base64</literal> :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ ./ducky-decode.pl -f /tmp/inject.bin | grep "Z g" | head -n 1 |  sed 's/\(\s\|00a0\)//g' | base64 -d
+function write_file_bytes{param([Byte[]] $file_bytes, [string] $file_path = ".\stage2.zip");$f = [io.file]::OpenWrite($file_path);$f.Seek($f.Length,0);$f.Write($file_bytes,0,$file_bytes.Length);$f.Close();}function check_correct_environment{$e=[Environment]::CurrentDirectory.split("\");$e=$e[$e.Length-1]+[Environment]::UserName;$e -eq "challenge2015sstic";}if(check_correct_environment){write_file_bytes([Convert]::FromBase64String('UEsDBAoDAAAAADaK[...]8AJFW2UwdXtOh6gUsBzWnXw=='));}else{write_file_bytes([Convert]::FromBase64String('VAByAHkASABhAHIAZABlAHIA'));}</programlisting>
+<simpara>Comme anticipé, on obtient alors un série d&#8217;instructions Powershell qui réalisent
+les opérations suivantes :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>définition d&#8217;une fonction <literal>write_file_bytes</literal> qui écrit les données <literal>$file_bytes</literal> à la fin
+du fichier spécifié par <literal>$file_path</literal> (<literal>stage2.zip</literal> par défaut);</simpara>
+</listitem>
+<listitem>
+<simpara>définition d&#8217;une fonction <literal>check_correct_environment</literal> qui teste si le nom
+de l&#8217;utilisateur courant est bien <literal>challenge2015sstic</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara>en fonction du résultat de l&#8217;appel à <literal>check_correct_environment</literal>, appel de la fonction
+<literal>write_file_bytes</literal> avec :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>une longue chaîne de caractères en Base64 si le résultat est positif,</simpara>
+</listitem>
+<listitem>
+<simpara>la chaîne <literal>"VAByAHkASABhAHIAZABlAHIA"</literal> (&#8220;Try harder&#8221;) sinon.</simpara>
+</listitem>
+</itemizedlist>
+</listitem>
+</itemizedlist>
+<simpara>Pour reconstruire le fichier <literal>stage2.zip</literal>, il ne reste plus qu&#8217;à extraire les
+données des instructions Powershell, les décoder puis écrire le résultat
+binaire dans le fichier de sortie. Le script Ruby ci-dessous réalise ces opérations :</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
+# encoding: UTF-8
+
+require 'base64'
+
+input = ARGV.shift
+
+File.open("stage2.zip", "wb") do |fo|
+  IO.popen("./ducky-decode.pl -f #{input}").each_line do |line|
+    next unless line =~ /^ Z/ <co xml:id="CO1-1"/>
+    s = line.gsub(/( |00a0)/, '').strip <co xml:id="CO1-2"/>
+    t = Base64.decode64(s).force_encoding("UTF-16LE").encode("UTF-8") <co xml:id="CO1-3"/>
+    if t =~ /FromBase64String\('([^']+)'\)/
+      fo.write Base64.decode64($1) <co xml:id="CO1-4"/>
+    end
+  end
+end</programlisting>
+<calloutlist>
+<callout arearefs="CO1-1">
+<para>teste si la ligne commence par " Z"</para>
+</callout>
+<callout arearefs="CO1-2">
+<para>suppression des espaces et opcode non décodé</para>
+</callout>
+<callout arearefs="CO1-3">
+<para>conversion d&#8217;UTF-16LE vers UTF-8</para>
+</callout>
+<callout arearefs="CO1-4">
+<para>extraction des données de <literal>stage2.zip</literal> et écriture dans le fichier de sortie</para>
+</callout>
+</calloutlist>
+<simpara>Le fichier obtenu peut alors être testé :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ md5sum stage2.zip
+979ff7961addd9ce982ff51fe2a0a058  stage2.zip
+$ unzip -t stage2.zip
+Archive:  stage2.zip
+    testing: encrypted                OK
+    testing: memo.txt                 OK
+    testing: sstic.pk3                OK
+No errors detected in compressed data of stage2.zip.</programlisting>
+<simpara>L&#8217;analyse de cette archive constitue la seconde étape de ce challenge.</simpara>
+</section>
+<section xml:id="_quake3">
+<title>Quake 3</title>
+<simpara>Le fichier <literal>memo.txt</literal> de l&#8217;archive <literal>stage2.zip</literal> est le suivant :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ cat memo.txt
+Cipher: AES-OFB
+IV: 0x5353544943323031352d537461676532
+Key: Damn... I ALWAYS forget it. Fortunately I found a way to hide it into my favorite game !
+
+SHA256: 91d0a6f55cce427132fc638b6beecf105c2cb0c817a4b7846ddb04e3132ea945 - encrypted
+SHA256: 845f8b000f70597cf55720350454f6f3af3420d8d038bb14ce74d6f4ac5b9187 - decrypted</programlisting>
+<simpara>Ce mémo nous donne des informations sur le mode de chiffrement, le vecteur
+d&#8217;initialisation utilisée et quelques indications sur la clé : celle-ci
+semble cachée dans un jeu.</simpara>
+<simpara>Le fichier <literal>sstic.pk3</literal>, également présent dans l&#8217;archive <literal>stage2.zip</literal>, est en fait
+une carte pour le jeu Quake 3 Arena. En chargeant la carte et en explorant les
+lieux, on aperçoit certaines textures contenant des données hexadécimales. On suppose
+à ce stade qu&#8217;il s&#8217;agit de morceaux de la clé à reconstituer.</simpara>
+<simpara>La vidéo ci-dessous présente un parcours dans la carte permettant de retrouver
+l&#8217;ensemble de ces textures :</simpara>
+<simpara>Ces textures, extraites depuis le fichier <literal>sstic.pk3</literal> sont présentées ci-dessous
+dans leur ordre de découverte :</simpara>
+<simpara><inlinemediaobject>
+<imageobject>
+<imagedata fileref="images/rk_montage.png"/>
+</imageobject>
+<textobject><phrase>rk_montage</phrase></textobject>
+</inlinemediaobject></simpara>
+<simpara>Enfin, la pièce finale après le rocket jump affiche la séquence à utiliser pour obtenir
+la clé finale :</simpara>
+<warning>
+<simpara>mettre une capture d&#8217;écran de la pièce</simpara>
+</warning>
+<simpara>Une fois la clé identifiée, le déchiffrement peut être réalisé par le script
+suivant :</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
+
+require 'openssl'
+require 'digest'
+
+def hex_to_bin(s)
+  s.scan(/../).map {|x| x.to_i(16)}.pack('C*')
+end
+
+iv = "5353544943323031352d537461676532"
+key  = "9e2f31f7" # flag green
+key &lt;&lt; "8153296b" # pulse white
+key &lt;&lt; "3d9b0ba6" # loc orange
+key &lt;&lt; "7695dc7c" # drop white
+key &lt;&lt; "b0daf152" # flag orange
+key &lt;&lt; "b54cdc34" # link green
+key &lt;&lt; "ffe0d355" # wifi green
+key &lt;&lt; "26609fac" # pc white
+
+encrypted_data = File.open("input/encrypted", "rb").read
+encrypted_sha256 = Digest::SHA256.hexdigest(encrypted_data)
+
+raise unless encrypted_sha256 == "91d0a6f55cce427132fc638b6beecf105c2cb0c817a4b7846ddb04e3132ea945"
+
+cipher = OpenSSL::Cipher.new('aes-256-ofb')
+cipher.decrypt
+cipher.key = hex_to_bin(key)
+cipher.iv = hex_to_bin(iv)
+
+plain = cipher.update(encrypted_data) + cipher.final
+
+File.open("decrypted", "wb") do |f|
+   f.write plain
+end</programlisting>
+<simpara>Etrangement, l&#8217;empreinte sha256 du fichier obtenu ne correspond pas à celle
+mentionnée dans le fichier <literal>memo.txt</literal></simpara>
+<programlisting language="console" linenumbering="unnumbered">$ sha256sum decrypted
+f9ca4432afe87cbb1fca914e35ce69708c6bfa360b82bff21503b6723d1cfbf0  decrypted</programlisting>
+<simpara>Cependant, en observant la fin du fichier, on constate la présence de données de
+bourrage :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ hexdump -C decrypted| tail -n 4
+0007a4e0  00 70 61 69 6e 74 2e 63  61 70 50 4b 05 06 00 00  |.paint.capPK....|
+0007a4f0  00 00 03 00 03 00 a4 00  00 00 46 a4 07 00 00 00  |..........F.....|
+0007a500  10 10 10 10 10 10 10 10  10 10 10 10 10 10 10 10  |................|
+0007a510</programlisting>
+<simpara>En supprimant les 16 derniers octets, on retrouve la bonne empreinte :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ dd if=decrypted bs=1 count=$(( $(stat -c %s decrypted)  - 16)) | sha256sum -
+500992+0 records in
+500992+0 records out
+500992 bytes (501 kB) copied, 0.520727 s, 962 kB/s
+845f8b000f70597cf55720350454f6f3af3420d8d038bb14ce74d6f4ac5b9187  -</programlisting>
+<simpara>L&#8217;archive obtenue peut alors être testée pour en découvrir le contenu :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ unzip -t decrypted
+Archive:  decrypted
+    testing: encrypted                OK
+    testing: memo.txt                 OK
+    testing: paint.cap                OK
+No errors detected in compressed data of decrypted.</programlisting>
+<simpara>L&#8217;étude de ces fichiers fait l&#8217;objet de l&#8217;étape suivante du challenge.</simpara>
+</section>
+<section xml:id="_paint">
+<title>Paint</title>
+<simpara>Le fichier <literal>memo.txt</literal> obtenu à l&#8217;étape précédente contient les informations
+suivantes :</simpara>
+<programlisting language="console" linenumbering="unnumbered"># cat memo.txt
+Cipher: Serpent-1-CBC-With-CTS
+IV: 0x5353544943323031352d537461676533
+Key: Well, definitely can't remember it... So this time I securely stored it with Paint.
+
+SHA256: 6b39ac2220e703a48b3de1e8365d9075297c0750e9e4302fc3492f98bdf3a0b0 - encrypted
+SHA256: 7beabe40888fbbf3f8ff8f4ee826bb371c596dd0cebe0796d2dae9f9868dd2d2 - decrypted</programlisting>
+<simpara>Cette fois-ci, la clé de déchiffrement semble avoir été stockée avec le logiciel
+Paint, ce qui est plutôt original. L&#8217;archive contient également un fichier
+<literal>paint.cap</literal> qu&#8217;il est possible d&#8217;ouvrir avec Wireshark, comme présenté ci-dessous :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_paint_cap.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk paint cap</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Il s&#8217;agit d&#8217;une capture d&#8217;une trace USB dans laquelle on distingue trois types
+de messages :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>des requêtes de type &#8220;Request DEVICE&#8221; pour énumérer les périphériques ;</simpara>
+</listitem>
+<listitem>
+<simpara>des réponses &#8220;Response DEVICE&#8221; aux précédentes requêtes ;</simpara>
+</listitem>
+<listitem>
+<simpara>enfin des messages de type &#8220;URB_INTERRUPT&#8221;.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Au niveau des périphériques découverts, on retrouve en particulier une souris
+USB :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_mouse_cap.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk mouse cap</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Le reste de la capture est une série de messages &#8220;URB_INTERRUPT&#8221; tel que celui
+présenté ci-dessous :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_urb_cap.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk urb cap</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Certaines données (&#8220;Leftover Capture Data&#8221;) ne sont pas décodées par Wireshark,
+faute de pouvoir les interpréter correctement.</simpara>
+<simpara>La lecture du fichier <link xlink:href="http://lxr.free-electrons.com/source/drivers/hid/usbhid/usbmouse.c#L81"><literal>usbmouse.c</literal></link>,
+responsable du support des souris USB dans le noyau Linux, permet de comprendre le format
+de ces données :</simpara>
+<programlisting language="c" linenumbering="unnumbered">input_report_key(dev, BTN_LEFT,   data[0] &amp; 0x01);
+input_report_key(dev, BTN_RIGHT,  data[0] &amp; 0x02);
+input_report_key(dev, BTN_MIDDLE, data[0] &amp; 0x04);
+input_report_key(dev, BTN_SIDE,   data[0] &amp; 0x08);
+input_report_key(dev, BTN_EXTRA,  data[0] &amp; 0x10);
+
+input_report_rel(dev, REL_X,     data[1]);
+input_report_rel(dev, REL_Y,     data[2]);
+input_report_rel(dev, REL_WHEEL, data[3]);</programlisting>
+<simpara>Le premier octet contient l&#8217;état des différents boutons de la souris, les octets
+deux et trois représentent le déplacement de la souris sur les axes X et Y et
+le dernier octet correspond au déplacement de la roulette.</simpara>
+<simpara>L&#8217;analyse de la trace permet donc de reconstituer tous les déplacements de la souris
+ainsi que les clics effectués. On peut donc ainsi espérer retrouver le dessin
+réalisé sous Paint, en associant à chaque clic un pixel.</simpara>
+<simpara>Le script Ruby ci-dessous exploite les informations des interruptions pour
+récupérer les coordonnées de chaque clic et construire l&#8217;image correspondante :</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
+
+require 'sdl'
+
+clicks = []
+x, y = 0, 0
+min_x, max_x, min_y, max_y = 0, 0, 0, 0
+
+IO.popen("tshark -r input/paint.cap -V").each_line do |line|
+  next unless line =~ /Leftover Capture Data: (.{8})/
+  data = $1.scan(/../).map {|x| x.to_i(16)}.pack('C*').unpack('c*')
+
+  buttons, x_dep, y_dep, dev_spec = *data
+
+  x += x_dep if x_dep != 0
+  y += y_dep if y_dep != 0
+
+  min_x = x if x &lt; min_x
+  max_x = x if x &gt; max_x
+  min_y = y if y &lt; min_y
+  max_y = y if y &gt; max_y
+
+  [ 0, 1, 2 ].each do |bit|
+    if ((buttons &gt;&gt; bit) &amp; 1) == 1 then
+      clicks &lt;&lt; [x, y]
+    end
+  end
+end
+
+extra_space = 128
+width = (max_x - min_x) + extra_space
+height = (max_y - min_y) + extra_space
+
+SDL.init(SDL::INIT_VIDEO)
+screen = SDL::Screen.open(width, height,16,SDL::HWSURFACE)
+
+white = screen.format.map_rgb(255, 255, 255)
+black = screen.format.map_rgb(0, 0, 0)
+screen.fill_rect(0, 0, width, height, white)
+
+clicks.each do |x, y|
+  screen.put_pixel(x - min_x + extra_space / 2,
+                   y - min_y + extra_space / 2,
+                   black)
+end
+
+screen.flip
+sleep(2)
+screen.save_bmp("screen.bmp")</programlisting>
+<simpara>Le résultat obtenu est le suivant :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_trim.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk trim</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Pour obtenir la clé de déchiffrement, il faut donc calculer
+l&#8217;empreinte de la chaîne &#8220;The quick brown fox jumps over
+the lobster dog&#8221; (référence au challenge SSTIC 2011) à l&#8217;aide
+de l&#8217;algorithme Blake256.</simpara>
+<simpara>Cet algorithme étant récent, il n&#8217;est pas implémenté dans les
+bibliothèques classiques telles qu&#8217;OpenSSL. Il faut donc télécharger
+puis compiler l&#8217;implémentation de référence à l&#8217;adresse
+<link xlink:href="https://131002.net/blake/blake_c.tar.gz">https://131002.net/blake/blake_c.tar.gz</link> .</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ wget https://131002.net/blake/blake_c.tar.gz
+$ tar xvf blake_c.tar.gz
+blake/
+blake/blake256.c
+blake/blake384.c
+blake/blake224.c
+blake/README
+blake/blake.h
+blake/Makefile
+blake/blake512.c
+blake/astyle-clean.sh
+$ cd blake
+$ make
+make
+cc -Wall -O3 -fomit-frame-pointer    blake224.c   -o blake224
+cc -Wall -O3 -fomit-frame-pointer    blake256.c   -o blake256
+cc -Wall -O3 -fomit-frame-pointer    blake384.c   -o blake384
+cc -Wall -O3 -fomit-frame-pointer    blake512.c   -o blake512
+Checking test vectors
+./blake224
+./blake256
+./blake384
+./blake512
+$ echo -n "The quick brown fox jumps over the lobster dog" &gt; key
+$ ./blake256 key
+66c1ba5e8ca29a8ab6c105a9be9e75fe0ba07997a839ffeae9700b00b7269c8d key</programlisting>
+<simpara>Il ne reste plus qu&#8217;à déchiffrer le fichier <literal>encrytped</literal> à l&#8217;aide des informations
+contenues dans le mémo, à savoir l&#8217;algorithme de chiffrement et le mode
+(Serpent-1-CBC-With-CTS) ainsi que le vecteur d&#8217;initialisation.</simpara>
+<simpara>Le script Ruby ci-dessous réalise l&#8217;opération de déchiffrement, en se basant
+sur les bindings à la bibliothèque CryptoPP :</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
+
+require 'cryptopp'
+
+IV = "5353544943323031352d537461676533"
+KEY = "66c1ba5e8ca29a8ab6c105a9be9e75fe0ba07997a839ffeae9700b00b7269c8d"
+
+inputfile, outputfile = ARGV.shift, ARGV.shift
+
+serpent = CryptoPP::Serpent.new
+serpent.block_mode = :cbc_cts
+serpent.iv_hex = IV
+serpent.key_hex = KEY
+
+File.open(inputfile, "rb") do |fi|
+  File.open(outputfile, "wb") do |fo|
+    serpent.decrypt_io fi, fo
+  end
+end</programlisting>
+<simpara>Le lancement du script permet de récupérer les données en clair :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ ./decrypt.rb input/encrypted input/decrypted
+$ sha256sum input/decrypted
+7beabe40888fbbf3f8ff8f4ee826bb371c596dd0cebe0796d2dae9f9868dd2d2  input/decrypted
+$ file input/decrypted
+input/decrypted: Zip archive data, at least v2.0 to extract
+$ unzip -t input/decrypted
+Archive:  input/decrypted
+    testing: stage4.html              OK
+No errors detected in compressed data of input/decrypted.</programlisting>
+<simpara>L&#8217;empreinte sha256 est correcte et le fichier obtenu est une archive zip
+contenant un fichier HTML qui sera analysé dans l&#8217;étape suivante.</simpara>
+</section>
+<section xml:id="_stego_stage">
+<title>Petit exercice de stéganographie</title>
+<section xml:id="_démarrage">
+<title>Démarrage</title>
+<simpara>Le fichier obtenu à l&#8217;étape précédente est une archive au format <literal>.tar.bz2</literal> qui contient
+une image <literal>JPEG</literal> :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ sha256sum decrypted
+9128135129d2be652809f5a1d337211affad91ed5827474bf9bd7e285ecef321  decrypted
+$ tar jxvf decrypted
+$ congratulations.jpg
+$ file congratulations.jpg
+congratulations.jpg: JPEG image data, JFIF standard 1.01
+$ ls -al congratulations.jpg
+-rw-r--r-- 1 jpe jpe 252569 mars  23 10:34 congratulations.jpg</programlisting>
+</section>
+<section xml:id="_analyse_de_congratulations_jpg">
+<title>Analyse de congratulations.jpg</title>
+<simpara>Le fichier <literal>congratulations.jpg</literal> correspond à l&#8217;image ci-dessous :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_congratulations.jpg" align="center"/>
+</imageobject>
+<textobject><phrase>rk congratulations</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>A première vue, selon la commande <literal>jpeginfo</literal>, le fichier semble valide :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ jpeginfo -c congratulations.jpg
+congratulations.jpg  636 x 474  24bit JFIF  P  252569  [OK]</programlisting>
+<simpara>La taille du fichier est néanmoins suspecte (252569 octets), pour une image de cette
+ dimension. En effet, en utilisant l&#8217;outil <literal>hachoir</literal>, on identifie une autre archive
+ <literal>.tar.bz2</literal> à l&#8217;intérieur de l&#8217;image :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ hachoir-subfile congratulations.jpg
+[+] Start search on 252569 bytes (246.6 KB)
+
+[+] File at 0 size=55248 (54.0 KB): JPEG picture
+[+] File at 55248: bzip2 archive
+
+[+] End of search -- offset=252569 (246.6 KB)
+$ dd if=congratulations.jpg of=out.tar.bz2 bs=1 skip=55248 2&gt;/dev/null
+$ tar jxvf out.tar.bz2
+congratulations.png</programlisting>
+<simpara>L&#8217;analyse du fichier <literal>congratulations.png</literal> constitue la seconde phase de cette étape.</simpara>
+</section>
+<section xml:id="_analyse_de_congratulations_png">
+<title>Analyse de congratulations.png</title>
+<simpara>L&#8217;image obtenue est présentée ci-dessous :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_congratulations.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk congratulations</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Elle est similaire au fichier <literal>congratulations.jpg</literal>, seul le message du bas a changé.
+On peut alors tester l&#8217;intégrité du fichier avec la commande <literal>pngcheck</literal>, comme présenté
+ci-dessous :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ pngcheck -v congratulations.png
+File: congratulations.png (197557 bytes)
+  chunk IHDR at offset 0x0000c, length 13
+    636 x 474 image, 32-bit RGB+alpha, non-interlaced
+  chunk bKGD at offset 0x00025, length 6
+    red = 0x00ff, green = 0x00ff, blue = 0x00ff
+  chunk pHYs at offset 0x00037, length 9: 3543x3543 pixels/meter (90 dpi)
+  chunk tIME at offset 0x0004c, length 7: 27 Feb 2015 13:40:19 UTC
+  chunk sTic at offset 0x0005f, length 4919:  illegal reserved-bit-set chunk
+ERRORS DETECTED in congratulations.png</programlisting>
+<simpara>Le fichier semble contenir un "chunk" de type <literal>sTic</literal>. Une rapide recherche sur
+Internet permet de confirmer qu&#8217;il ne s&#8217;agit pas d&#8217;un type valide.</simpara>
+<simpara>Le script Ruby ci-dessous permet de lister tous les types de "chunk" :</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
+
+require 'chunky_png'
+
+png_stream = ChunkyPNG::Datastream.from_file(ARGV.shift)
+png_stream.each_chunk { |chunk| puts chunk.type }</programlisting>
+<simpara>Son exécution retourne le résultat suivant :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ ./list-chunks.rb congratulations.png
+IHDR
+bKGD
+pHYs
+tIME
+sTic
+sTic
+[...]
+sTic
+sTic
+IDAT
+IDAT
+IDAT
+IDAT
+IDAT
+IDAT
+IDAT
+IDAT
+IEND</programlisting>
+<simpara>Une invite <literal>irb</literal> est alors utilisée pour examiner le fichier en mode interactif :</simpara>
+<programlisting language="irb" linenumbering="unnumbered">$ irb
+irb(main):001:0&gt; require 'chunky_png'
+ =&gt; true
+irb(main):002:0&gt; png_stream = ChunkyPNG::Datastream.from_file("congratulations.png")
+irb(main):003:0&gt; chunks = png_stream.chunks.select {|c| c.type == "sTic"}
+irb(main):004:0&gt; chunks.size
+ =&gt; 28
+irb(main):005:0&gt; chunks.first
+ =&gt; #&lt;ChunkyPNG::Chunk::Generic:0x0000000280a910 @type="sTic", @content="x\x9C\x84[...]</programlisting>
+<simpara>Le fichier contient donc 28 chunks de type <literal>sTic</literal>. On peut alors s&#8217;intéresser aux données
+contenues dans le premier chunk.</simpara>
+<programlisting language="irb" linenumbering="unnumbered">irb(main):006:0&gt; chunks[0].content[0, 4].unpack('H*')
+ =&gt; ["789c84b6"]</programlisting>
+<simpara>Une recherche de <literal>0x78 0x9c</literal> sur Internet permet d&#8217;identifier un probable
+début de stream Zlib. On peut alors tenter une décompression et sauvegarder le résulat.</simpara>
+<programlisting language="irb" linenumbering="unnumbered">irb(main):007:0&gt; data = chunks.map {|c| c.content}.join
+irb(main):008:0&gt; require 'zlib'
+ =&gt; false
+irb(main):009:0&gt; File.open("out.bin", "wb") {|f| f.write Zlib::Inflate.inflate(data) }
+ =&gt; 133048
+irb(main):010:0&gt; puts `file out.bin`
+out.bin: bzip2 compressed data, block size = 900k</programlisting>
+<simpara>Le résultat obtenu est un fichier <literal>bzip2</literal> qui est en fait une archive <literal>tar.bz2</literal>
+contenant une nouvelle image :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ tar jxvf out.bin
+congratulations.tiff</programlisting>
+<simpara>Cette image doit alors être analysée pour poursuivre le challenge.</simpara>
+</section>
+<section xml:id="_analyse_de_congratulations_tiff">
+<title>Analyse de congratulations.tiff</title>
+<simpara>L&#8217;image obtenue est la suivante :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_congratulations_tiff.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk congratulations tiff</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>L&#8217;outil <literal>tiffinfo</literal> permet d&#8217;obtenir des informations sur le fichier :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ ls -al congratulations.tiff
+-rw-r--r-- 1 jpe jpe 904520 mars  23 10:34 congratulations.tiff
+$ tiffinfo -v congratulations.tiff
+TIFF Directory at offset 0x8 (8)
+  Image Width: 636 Image Length: 474
+  Bits/Sample: 8
+  Compression Scheme: None
+  Photometric Interpretation: RGB color
+  Samples/Pixel: 3
+  Rows/Strip: 474
+  Planar Configuration: single image plane</programlisting>
+<simpara>Sachant que 8 bits sont utilisés pour stocker un "sample", qu&#8217;un pixel nécessite 3
+"samples" et que les dimensions de l&#8217;image sont <literal>636 x 474</literal>, il faut donc
+<literal>3 * 636 * 474 = 904392</literal> octets pour stocker l&#8217;ensemble des pixels. Par rapport
+à la taille totale du fichier (904520 octets), il ne reste plus que 128 octets
+qui correspondent aux entêtes du fichier. Un rapide examen de ces
+derniers, en utlisant par exemple le script <link xlink:href="code/parse_tiff.rb">parse_tiff.rb</link>,
+ ne permet pas d&#8217;identifier de données cachées pouvant représenter
+l&#8217;adresse email recherchée. Toutes les données du fichier étant alors utilisées
+pour représenter l&#8217;image, il faut donc aller chercher ailleurs pour poursuivre
+le challenge.</simpara>
+<simpara>Une hypothèse intéressante est de supposer que la suite du challenge ne peut
+être stockée que dans les informations décrivant chaque pixel. Une technique
+stéganographique bien connue permet justement de réaliser cet objectif, en utilisant
+les bits les moins significatifs (dits de poids faible) de chaque pixel pour
+dissimuler de l&#8217;information.</simpara>
+<simpara>L&#8217;outil <link xlink:href="https://github.com/apsdehal/ctf-tools">StegSolve @ <emphasis role="strong">GitHub</emphasis></link>, bien connu
+des participants de CTF, est utile pour détecter l&#8217;utilisation de techniques
+stéganographiques au sein d&#8217;une image. Il permet notamment de visualiser séparement
+chaque bit des trois composantes RGB pour vérifier leur utilisation au
+niveau de l&#8217;image.</simpara>
+<tip>
+<simpara>StegSolve ne sait pas d&#8217;analyser directement une image au format TIFF mais une
+conversion sans perte au format PNG (par exemple avec ImageMagick)
+conserve le codage des pixels.</simpara>
+</tip>
+<simpara>L&#8217;examen de la composante rouge met en évidence une anomalie au niveau
+du bit 0 :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_stegsolve_red0.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk stegsolve red0</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>De la même manière, le bit 0 de la composante verte semble être
+utilisé pour stocker des données :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_stegsolve_green0.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk stegsolve green0</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Ces données sont finalement extraites à l&#8217;aide de la fonctionnalité
+&#8220;Data Extract&#8221; de StegSolve, en sélectionnant les bits 0 des composantes
+vertes et rouges. On peut alors reconnaitre un entête d&#8217;une
+archive <literal>bzip2</literal>, comme présenté ci-dessous :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_stegsolve_data.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk stegsolve data</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Il ne reste plus alors qu&#8217;à sauvegarder le résultat pour poursuivre le
+challenge.</simpara>
+</section>
+<section xml:id="_analyse_de_congratulations_gif">
+<title>Analyse de congratulations.gif</title>
+<simpara>Le fichier obtenu à la phase précédente est une archive <literal>tar.bz2</literal> contenant
+une nouvelle image à analyser, <literal>congratulations.gif</literal>.</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ tar jxvf step4.bz2
+
+bzip2: (stdin): trailing garbage after EOF ignored
+congratulations.gif</programlisting>
+<simpara>Cette image est présentée ci-dessous :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_congratulations_gif.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk congratulations gif</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>On peut alors profiter que StegSolve soit toujours lancé pour charger l&#8217;image
+obtenue et l&#8217;analyser.</simpara>
+<simpara>La fonctionnalité &#8220;Random colour map&#8221; affiche finalement l&#8217;adresse
+email de validation, comme présenté ci-dessous :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_stegsolve_random.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk stegsolve random</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>En plissant les yeux et en faisant attention, on arrive enfin à recopier
+l&#8217;adresse de validation qui est : <literal>1713e7c1d0b750ccd4e002bb957aa799@challenge.sstic.org</literal></simpara>
+</section>
+</section>
+<section xml:id="_conclusion">
+<title>Conclusion</title>
+<warning>
+<simpara>à rédiger</simpara>
+</warning>
+</section>
+</article>
