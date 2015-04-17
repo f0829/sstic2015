@@ -10,7 +10,7 @@ namespace :sstic do
   desc 'build basic formats'
   task :build => :prebuild do
     puts "Converting to HTML ..."
-    `bundle exec asciidoctor main.asc`
+    `bundle exec asciidoctor -a stylesheet=./stylesheets/foundation.css main.asc`
     puts " -- HTML output at main.html"
 
     puts "Converting to EPub..."
