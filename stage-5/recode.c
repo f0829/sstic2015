@@ -60,7 +60,9 @@ typedef struct tr_ctx {
   uint8_t t4_st;
   uint8_t t5_st;
   uint16_t t6_st;
+  uint8_t t8_idx;
   uint8_t t8_st[4][12];
+  uint8_t t10_idx;
   uint8_t t10_st[4][12];
   uint8_t t12_st[12];
 
@@ -118,22 +120,10 @@ inline uint8_t transputer_5(const uint8_t *key, tr_ctx_t *ctx) {
 
    result => 0x9e
    */
-uint8_t t6_init_done = 0;
 
 inline uint8_t transputer_6(const uint8_t *key, tr_ctx_t *ctx) {
-	//static uint16_t var_3 = 0;
 	uint16_t k1, k2, k3;
-	int i;
 
-	if (t6_init_done != 0)
-		goto loc_3c;
-
-	/* init var_1 */
-	for (i = 0; i < 12; i++) {
-		ctx->t6_st = (ctx->t6_st + key[i]) & 0xffff;
-	}
-	t6_init_done = 1;
-loc_3c:
 	k1 = (ctx->t6_st & 0x8000) >> 0xf;
 	k2 = (ctx->t6_st & 0x4000) >> 0xe;
 
@@ -202,7 +192,6 @@ inline uint8_t transputer_7(const uint8_t *key, tr_ctx_t *ctx) {
 	return var_3;
 }
 
-uint8_t tr8_state[4][12];
 
 /* Tested, OK
    l 7ff80000 transputer_8.bin
@@ -219,34 +208,20 @@ uint8_t tr8_state[4][12];
 
    result => 0xcf
    */
-
-uint8_t t8_init_done = 0;
-
 inline uint8_t transputer_8(const uint8_t *key, tr_ctx_t *ctx) {
-	static uint8_t var_4;
 	int i, j;
 	uint8_t var_3, var_1;
 
-	if (t8_init_done == 0) {
-		var_4 = 0;
-		for (i = 0; i < 4; i++) {
-			memset(ctx->t8_st[i], 0, 12);
-		}
-		t8_init_done = 1;
-	}
-
-	memcpy(ctx->t8_st[var_4], key, 12);
-	var_4 = (var_4 + 1) % 4;
+	memcpy(ctx->t8_st[ctx->t8_idx], key, 12);
+	ctx->t8_idx = (ctx->t8_idx + 1) % 4;
 
 	var_3 = 0;
 	for (i = 0; i < 4; i++) {
 		var_1 = 0;
 		for (j = 0; j < 12; j++) {
 			var_1 += ctx->t8_st[i][j];
-			//var_1 &= 0xff;
 		}
 		var_3 = var_1 ^ var_3;
-		//var_3 &= 0xff;
 	}
 
 	return var_3;
@@ -313,22 +288,12 @@ inline uint8_t transputer_2(const uint8_t *key, tr_ctx_t *ctx) {
 
 
 */
-uint8_t t10_init_done = 0;
 inline uint8_t transputer_10(const uint8_t *key, tr_ctx_t *ctx) {
-	static uint8_t var_2;
 	int i, j;
 	uint8_t var_1, res;
 
-	if (t10_init_done == 0) {
-		var_2 = 0;
-		for (i = 0; i < 4; i++) {
-			memset(ctx->t10_st[i], 0, 12);
-		}
-		t10_init_done = 1;
-	}
-
-	memcpy(ctx->t10_st[var_2], key, 12);
-	var_2 = (var_2 + 1) % 4;
+	memcpy(ctx->t10_st[ctx->t10_idx], key, 12);
+	ctx->t10_idx = (ctx->t10_idx + 1) % 4;
 
 	var_1 = 0;
 	for (i = 0; i < 4; i++) {
@@ -356,30 +321,19 @@ inline uint8_t transputer_10(const uint8_t *key, tr_ctx_t *ctx) {
    s i 7ff80030
    g
    */
-
-uint8_t t12_state[12];
-
-uint8_t t12_init_done = 0;
 inline uint8_t transputer_11(const uint8_t *key, tr_ctx_t *ctx) {
 	uint8_t var_1;
 
-	if (t12_init_done == 0) {
-		memset(ctx->t12_st, 0, 12);
-		t12_init_done = 1;
-	}
-
-	var_1 = (ctx->t12_st[9] ^ ( ctx->t12_st[5] ^ ctx->t12_st[1] )) & 0xff; /* from T12 */
+	var_1 = ctx->t12_st[9] ^ ( ctx->t12_st[5] ^ ctx->t12_st[1] ); /* from T12 */
 	var_1 = key[var_1 % 12];
 	return var_1;
 }
 
-
 inline uint8_t transputer_12(const uint8_t *key, tr_ctx_t *ctx) {
 	uint8_t var_1, var_2;
 
-	var_1 = (ctx->t12_st[9] ^ ( ctx->t12_st[5] ^ ctx->t12_st[1] )) & 0xff;
 	memcpy(ctx->t12_st, key, 12);
-	var_2 = (key[7] ^ (key[3] ^ key[0])) & 0xff; /* from T11 */
+	var_2 = key[7] ^ (key[3] ^ key[0]); /* from T11 */
 
 	var_1 = key[var_2 % 12];
 	return var_1;
@@ -428,22 +382,20 @@ void transputer_0(const char *key, const char *cipher, int cipher_len, char *pla
 	}
 }
 
-void init_ctx(tr_ctx_t *ctx) {
-	memset(ctx, 0, sizeof(struct tr_ctx));
-	/*
-	t4_state = 0;
-	t5_state = 0;
-	t6_state = 0;
-	*/
-	t6_init_done = 0;
-	t8_init_done = 0;
-	t10_init_done = 0;
-	t12_init_done = 0;
+void init_ctx(tr_ctx_t *ctx, const uint8_t *key) {
+	int i;
+
+	memset(ctx, 0, sizeof(*ctx));
+
+	/* t6 init */
+	for (i = 0; i < 12; i++) {
+		ctx->t6_st = (ctx->t6_st + key[i]) & 0xffff;
+	}
 }
 
 void decipher(const char *key, const char *cipher, char *plain, int size) {
 	tr_ctx_t ctx;
-	init_ctx(&ctx);
+	init_ctx(&ctx, (const uint8_t *) key);
 	transputer_0(key, cipher, size, plain, &ctx);
 }
 
