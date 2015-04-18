@@ -463,16 +463,16 @@ void bf(const char *path, int start, int finish) {
 		goto finish;
 	}
 
-	for (i = 400; i < KEYS_COUNT; i++) {
+	for (i = 0; i < KEYS_COUNT; i++) {
 		printf("i = %d\n", i);
 		key = keys[i];
 		for (j = start; j < finish; j++) {
 			key[10] = j;
 			for (k = 0; k < 256; k++) {
 				key[11] = k;
-				decipher(key, cipher_bf, plain_bf, 64);
+				decipher(key, cipher_bf, plain_bf, 32);
 
-				if (memmem(plain_bf, 64, "\xFF\xFF\xFF\xFF", 4) == NULL) {
+				if (memmem(plain_bf, 32, "\xFF\xFF\xFF\xFF", 4) == NULL) {
 					continue;
 				} else {
 					printf("[%d] found FF FF FF in plaintext\n", i);
