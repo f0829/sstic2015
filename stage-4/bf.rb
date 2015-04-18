@@ -24,14 +24,10 @@ def generate_ua_list
   end
 
   gecko_versions = []
-  (34..38).each do |i|
-    gecko_versions << "#{i}.0"
-  end
+  (34..38).each { |i| gecko_versions << "#{i}.0" }
 
   platforms.each do |platform|
-    gecko_versions.each do |version|
-      res << "#{s} (#{platform}; rv:#{version}) Gecko"
-    end
+    gecko_versions.each { |version| res << "#{s} (#{platform}; rv:#{version}) Gecko" }
   end
 
   return res
@@ -50,12 +46,9 @@ generate_ua_list.each do |ua|
     sha1 = Digest::SHA1.hexdigest(plain)
     if sha1 == expected_sha1 then
       puts "[*] Found, ua = #{ua}"
-      File.open("stage5.zip", "wb") do |f|
-        f.write plain
-      end
+      File.open("stage5.zip", "wb") { |f| f.write plain }
       exit
     end
-
   rescue OpenSSL::Cipher::CipherError => e
     puts e
   end
