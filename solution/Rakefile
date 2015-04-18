@@ -1,8 +1,31 @@
+def add_video_format(fpath)
+  extensions = [ 'webm', 'mp4' ]
+  data = File.open(fpath).read
+  if data =~ /(\<video src="([^"]+)" controls\>)/
+    s = $1
+    url = $2
+    file = url.split('/').last
+    uri_path = url.split('/')[0..-2].join('/')
+    ext = file.split('.').last
+    file_without_ext = file.split('.')[0..-2].join('.')
+    pos = data.index(s)
+    output = data[0, pos]
+    output << "<video controls>\n"
+    extensions.each do |e|
+      output << "  <source src='#{uri_path}/#{file_without_ext}.#{e}' type='video/#{e}'>\n"
+    end
+    output << data[(pos+s.size)..-1]
+    File.open(fpath, "w") do |f|
+      f.write output
+    end
+  end
+end
+
 namespace :sstic do
   desc 'prepare build'
   task :prebuild do
     Dir.mkdir 'images' unless Dir.exists? 'images'
-    Dir.glob("../stage-*/**/rk_*.[jpg][ipn][gf]").each do |image|
+    Dir.glob("../stage-*/**/rk_*.[jpgs][ipnv][gf]").each do |image|
       FileUtils.copy(image, "images/" + File.basename(image))
     end
   end
@@ -11,6 +34,7 @@ namespace :sstic do
   task :build => :prebuild do
     puts "Converting to HTML ..."
     `bundle exec asciidoctor -a stylesheet=./stylesheets/foundation.css main.asc`
+    add_video_format("main.html")
     puts " -- HTML output at main.html"
 
     puts "Converting to EPub..."
