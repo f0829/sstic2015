@@ -55,15 +55,25 @@ void DumpHex(const void* data, size_t size) {
    g
    result => 0xcf
    */
-uint8_t t4_state = 0;
-inline uint8_t transputer_4(const uint8_t *key) {
+
+typedef struct tr_ctx {
+  uint8_t t4_st;
+  uint8_t t5_st;
+  uint16_t t6_st;
+  uint8_t t8_st[4][12];
+  uint8_t t10_st[4][12];
+  uint8_t t12_st[12];
+
+} tr_ctx_t;
+
+inline uint8_t transputer_4(const uint8_t *key, tr_ctx_t *ctx) {
 	int i;
 
 	for (i = 0; i < 12; i++) {
-		t4_state += key[i];
+		ctx->t4_st += key[i];
 	}
 
-	return t4_state;
+	return ctx->t4_st;
 }
 
 /* Tested, OK
@@ -82,15 +92,14 @@ inline uint8_t transputer_4(const uint8_t *key) {
 
    result => 0x75
    */
-uint8_t t5_state = 0;
-inline uint8_t transputer_5(const uint8_t *key) {
+inline uint8_t transputer_5(const uint8_t *key, tr_ctx_t *ctx) {
 	int i;
 
 	for (i = 0; i < 12; i++) {
-		t5_state ^= key[i];
+		ctx->t5_st ^= key[i];
 	}
 
-	return t5_state;
+	return ctx->t5_st;
 }
 
 /* Tested, OK
@@ -110,9 +119,8 @@ inline uint8_t transputer_5(const uint8_t *key) {
    result => 0x9e
    */
 uint8_t t6_init_done = 0;
-uint16_t t6_state = 0;
 
-inline uint8_t transputer_6(const uint8_t *key) {
+inline uint8_t transputer_6(const uint8_t *key, tr_ctx_t *ctx) {
 	//static uint16_t var_3 = 0;
 	uint16_t k1, k2, k3;
 	int i;
@@ -122,31 +130,31 @@ inline uint8_t transputer_6(const uint8_t *key) {
 
 	/* init var_1 */
 	for (i = 0; i < 12; i++) {
-		t6_state = (t6_state + key[i]) & 0xffff;
+		ctx->t6_st = (ctx->t6_st + key[i]) & 0xffff;
 	}
 	t6_init_done = 1;
 loc_3c:
-	k1 = (t6_state & 0x8000) >> 0xf;
-	k2 = (t6_state & 0x4000) >> 0xe;
+	k1 = (ctx->t6_st & 0x8000) >> 0xf;
+	k2 = (ctx->t6_st & 0x4000) >> 0xe;
 
 	k2 ^= k1;
 	k2 &= 0xffff;
 
-	k3 = (t6_state << 1);
+	k3 = (ctx->t6_st << 1);
 	k3 &= 0xffff;
 
-	t6_state = k3 ^ k2;
-	t6_state &= 0xffff;
+	ctx->t6_st = k3 ^ k2;
+	ctx->t6_st &= 0xffff;
 
-	return (t6_state & 0xff);
+	return (ctx->t6_st & 0xff);
 }
 
-inline uint8_t transputer_1(const uint8_t *key) {
+inline uint8_t transputer_1(const uint8_t *key, tr_ctx_t *ctx) {
 	uint8_t a, b, c, res;
 
-	a = transputer_4(key);
-	b = transputer_5(key);
-	c = transputer_6(key);
+	a = transputer_4(key, ctx);
+	b = transputer_5(key, ctx);
+	c = transputer_6(key, ctx);
 #if DEBUG
 	printf("[T1] T4 : 0x%2.2x T5 : 0x%2.2x T6 : 0x%2.2x\n", a, b, c);
 #endif
@@ -173,7 +181,7 @@ inline uint8_t transputer_1(const uint8_t *key) {
    result => 0xaf
    */
 
-inline uint8_t transputer_7(const uint8_t *key) {
+inline uint8_t transputer_7(const uint8_t *key, tr_ctx_t *ctx) {
 	uint8_t var_1, var_2, var_3;
 	int i;
 
@@ -214,7 +222,7 @@ uint8_t tr8_state[4][12];
 
 uint8_t t8_init_done = 0;
 
-inline uint8_t transputer_8(const uint8_t *key) {
+inline uint8_t transputer_8(const uint8_t *key, tr_ctx_t *ctx) {
 	static uint8_t var_4;
 	int i, j;
 	uint8_t var_3, var_1;
@@ -222,19 +230,19 @@ inline uint8_t transputer_8(const uint8_t *key) {
 	if (t8_init_done == 0) {
 		var_4 = 0;
 		for (i = 0; i < 4; i++) {
-			memset(tr8_state[i], 0, 12);
+			memset(ctx->t8_st[i], 0, 12);
 		}
 		t8_init_done = 1;
 	}
 
-	memcpy(tr8_state[var_4], key, 12);
+	memcpy(ctx->t8_st[var_4], key, 12);
 	var_4 = (var_4 + 1) % 4;
 
 	var_3 = 0;
 	for (i = 0; i < 4; i++) {
 		var_1 = 0;
 		for (j = 0; j < 12; j++) {
-			var_1 += tr8_state[i][j];
+			var_1 += ctx->t8_st[i][j];
 			//var_1 &= 0xff;
 		}
 		var_3 = var_1 ^ var_3;
@@ -260,7 +268,7 @@ inline uint8_t transputer_8(const uint8_t *key) {
 
    result => 0x06
    */
-inline uint8_t transputer_9(const uint8_t *key) {
+inline uint8_t transputer_9(const uint8_t *key, tr_ctx_t *ctx) {
 	uint8_t var_1 = 0;
 	int i;
 
@@ -274,12 +282,12 @@ inline uint8_t transputer_9(const uint8_t *key) {
 	return var_1;
 }
 
-inline uint8_t transputer_2(const uint8_t *key) {
+inline uint8_t transputer_2(const uint8_t *key, tr_ctx_t *ctx) {
 	uint8_t a, b, c, res;
 
-	a = transputer_7(key);
-	b = transputer_8(key);
-	c = transputer_9(key);
+	a = transputer_7(key, ctx);
+	b = transputer_8(key, ctx);
+	c = transputer_9(key, ctx);
 #if DEBUG
 	printf("[T2] T7 : 0x%2.2x T8 : 0x%2.2x T9 : 0x%2.2x\n", a, b, c);
 #endif
@@ -289,7 +297,6 @@ inline uint8_t transputer_2(const uint8_t *key) {
 	return res;
 }
 
-uint8_t tr10_state[4][12];
 
 /* ?
    l 7ff80000 transputer_10.bin
@@ -307,7 +314,7 @@ uint8_t tr10_state[4][12];
 
 */
 uint8_t t10_init_done = 0;
-inline uint8_t transputer_10(const uint8_t *key) {
+inline uint8_t transputer_10(const uint8_t *key, tr_ctx_t *ctx) {
 	static uint8_t var_2;
 	int i, j;
 	uint8_t var_1, res;
@@ -315,23 +322,23 @@ inline uint8_t transputer_10(const uint8_t *key) {
 	if (t10_init_done == 0) {
 		var_2 = 0;
 		for (i = 0; i < 4; i++) {
-			memset(tr10_state[i], 0, 12);
+			memset(ctx->t10_st[i], 0, 12);
 		}
 		t10_init_done = 1;
 	}
 
-	memcpy(tr10_state[var_2], key, 12);
+	memcpy(ctx->t10_st[var_2], key, 12);
 	var_2 = (var_2 + 1) % 4;
 
 	var_1 = 0;
 	for (i = 0; i < 4; i++) {
-		var_1 += tr10_state[i][0];
+		var_1 += ctx->t10_st[i][0];
 		var_1 &= 0xff;
 	}
 
 	i = var_1 & 3;
 	j = (var_1 >> 4) % 12;
-	res = tr10_state[i][j];
+	res = ctx->t10_st[i][j];
 
 	return res;
 }
@@ -353,37 +360,37 @@ inline uint8_t transputer_10(const uint8_t *key) {
 uint8_t t12_state[12];
 
 uint8_t t12_init_done = 0;
-inline uint8_t transputer_11(const uint8_t *key) {
+inline uint8_t transputer_11(const uint8_t *key, tr_ctx_t *ctx) {
 	uint8_t var_1;
 
 	if (t12_init_done == 0) {
-		memset(t12_state, 0, 12);
+		memset(ctx->t12_st, 0, 12);
 		t12_init_done = 1;
 	}
 
-	var_1 = (t12_state[9] ^ ( t12_state[5] ^ t12_state[1] )) & 0xff; /* from T12 */
+	var_1 = (ctx->t12_st[9] ^ ( ctx->t12_st[5] ^ ctx->t12_st[1] )) & 0xff; /* from T12 */
 	var_1 = key[var_1 % 12];
 	return var_1;
 }
 
 
-inline uint8_t transputer_12(const uint8_t *key) {
+inline uint8_t transputer_12(const uint8_t *key, tr_ctx_t *ctx) {
 	uint8_t var_1, var_2;
 
-	var_1 = (t12_state[9] ^ ( t12_state[5] ^ t12_state[1] )) & 0xff;
-	memcpy(t12_state, key, 12);
+	var_1 = (ctx->t12_st[9] ^ ( ctx->t12_st[5] ^ ctx->t12_st[1] )) & 0xff;
+	memcpy(ctx->t12_st, key, 12);
 	var_2 = (key[7] ^ (key[3] ^ key[0])) & 0xff; /* from T11 */
 
 	var_1 = key[var_2 % 12];
 	return var_1;
 }
 
-inline uint8_t transputer_3(const uint8_t *key) {
+inline uint8_t transputer_3(const uint8_t *key, tr_ctx_t *ctx) {
 	uint8_t a, b, c, res;
 
-	a = transputer_10(key);
-	b = transputer_11(key);
-	c = transputer_12(key);
+	a = transputer_10(key, ctx);
+	b = transputer_11(key, ctx);
+	c = transputer_12(key, ctx);
 #if DEBUG
 	printf("[T3] T10: 0x%2.2x T11: 0x%2.2x T12: 0x%2.2x\n", a, b, c);
 #endif
@@ -393,7 +400,7 @@ inline uint8_t transputer_3(const uint8_t *key) {
 	return res;
 }
 
-void transputer_0(const char *key, const char *cipher, int cipher_len, char *plain) {
+void transputer_0(const char *key, const char *cipher, int cipher_len, char *plain, tr_ctx_t *ctx) {
 	uint8_t current_key[12];
 	int i, j;
 	uint8_t t1_res, t2_res, t3_res;
@@ -404,9 +411,9 @@ void transputer_0(const char *key, const char *cipher, int cipher_len, char *pla
 
 	for (i = 0; i < cipher_len; i++) {
 		j = i % 12;
-		t1_res = transputer_1(current_key);
-		t2_res = transputer_2(current_key);
-		t3_res = transputer_3(current_key);
+		t1_res = transputer_1(current_key, ctx);
+		t2_res = transputer_2(current_key, ctx);
+		t3_res = transputer_3(current_key, ctx);
 
 #if DEBUG
 		printf("[T0] T1 : 0x%2.2x T2 : 0x%2.2x T3 : 0x%2.2x\n", t1_res, t2_res, t3_res);
@@ -421,10 +428,13 @@ void transputer_0(const char *key, const char *cipher, int cipher_len, char *pla
 	}
 }
 
-void init_transputers(void) {
+void init_ctx(tr_ctx_t *ctx) {
+	memset(ctx, 0, sizeof(struct tr_ctx));
+	/*
 	t4_state = 0;
 	t5_state = 0;
 	t6_state = 0;
+	*/
 	t6_init_done = 0;
 	t8_init_done = 0;
 	t10_init_done = 0;
@@ -432,8 +442,9 @@ void init_transputers(void) {
 }
 
 void decipher(const char *key, const char *cipher, char *plain, int size) {
-	init_transputers();
-	transputer_0(key, cipher, size, plain);
+	tr_ctx_t ctx;
+	init_ctx(&ctx);
+	transputer_0(key, cipher, size, plain, &ctx);
 }
 
 void sha256sum(const char *data, int len, char output[65]) {
@@ -451,8 +462,8 @@ void sha256sum(const char *data, int len, char output[65]) {
 	output[64] = 0;
 }
 
-char *cipher_sha256 = "a5790b4427bc13e4f4e9f524c684809ce96cd2f724e29d94dc999ec25e166a81";
-char *plain_sha256  = "9128135129d2be652809f5a1d337211affad91ed5827474bf9bd7e285ecef321";
+const char *cipher_sha256 = "a5790b4427bc13e4f4e9f524c684809ce96cd2f724e29d94dc999ec25e166a81";
+const char *plain_sha256  = "9128135129d2be652809f5a1d337211affad91ed5827474bf9bd7e285ecef321";
 
 void bf(const char *path, int start, int finish) {
 	int fd, ret, out_fd;
@@ -500,7 +511,7 @@ void bf(const char *path, int start, int finish) {
 		goto finish;
 	}
 
-	for (i = 0; i < KEYS_COUNT; i++) {
+	for (i = 400; i < KEYS_COUNT; i++) {
 		printf("i = %d\n", i);
 		key = keys[i];
 		for (j = start; j < finish; j++) {
