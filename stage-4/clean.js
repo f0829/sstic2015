@@ -102,7 +102,7 @@ function simplify_ast(ast) {
                     return node;
                 }
                 if (k && k['ref_count'] == 1) {
-                    if ((k.node.type == 'Literal') ||  (k.node.type == 'Identifier')) {
+                    if ((k.node.type == 'Literal') || (k.node.type == 'Identifier')) {
                         return k.node;
                     }
                 }
@@ -115,7 +115,7 @@ function simplify_ast(ast) {
             return simplify_node(node);
         },
         leave: function(node, parent) {
-            if ((node.type == 'FunctionDeclaration') ||  (node.type == 'Program')) {
+            if ((node.type == 'FunctionDeclaration') || (node.type == 'Program')) {
                 scopeChain.pop();
             }
         }
