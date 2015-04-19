@@ -8,40 +8,24 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
+#include <omp.h>
 
 #include "keys.h"
 
 #define DEBUG 0 
 
-void DumpHex(const void* data, size_t size) {
-	char ascii[17];
-	size_t i, j;
-	ascii[16] = '\0';
-	for (i = 0; i < size; ++i) {
-		printf("%02X ", ((unsigned char*)data)[i]);
-		if (((unsigned char*)data)[i] >= ' ' && ((unsigned char*)data)[i] <= '~') {
-			ascii[i % 16] = ((unsigned char*)data)[i];
-		} else {
-			ascii[i % 16] = '.';
-		}
-		if ((i+1) % 8 == 0 || i+1 == size) {
-			printf(" ");
-			if ((i+1) % 16 == 0) {
-				printf("|  %s \n", ascii);
-			} else if (i+1 == size) {
-				ascii[(i+1) % 16] = '\0';
-				if ((i+1) % 16 <= 8) {
-					printf(" ");
-				}
-				for (j = (i+1) % 16; j < 16; ++j) {
-					printf("   ");
-				}
-				printf("|  %s \n", ascii);
-			}
-		}
-	}
-}
+#define PLAIN_TEXT_LOOKUP 32 
 
+typedef struct tr_ctx {
+	uint8_t t4_st;
+	uint8_t t5_st;
+	uint16_t t6_st;
+	uint8_t t8_idx;
+	uint8_t t8_st[4][12];
+	uint8_t t10_idx;
+	uint8_t t10_st[4][12];
+	uint8_t t12_st[12];
+} tr_ctx_t;
 
 /* Tested, OK
    l 7ff80000 transputer_4.bin
@@ -55,19 +39,6 @@ void DumpHex(const void* data, size_t size) {
    g
    result => 0xcf
    */
-
-typedef struct tr_ctx {
-  uint8_t t4_st;
-  uint8_t t5_st;
-  uint16_t t6_st;
-  uint8_t t8_idx;
-  uint8_t t8_st[4][12];
-  uint8_t t10_idx;
-  uint8_t t10_st[4][12];
-  uint8_t t12_st[12];
-
-} tr_ctx_t;
-
 inline uint8_t transputer_4(const uint8_t *key, tr_ctx_t *ctx) {
 	int i;
 
@@ -120,7 +91,6 @@ inline uint8_t transputer_5(const uint8_t *key, tr_ctx_t *ctx) {
 
    result => 0x9e
    */
-
 inline uint8_t transputer_6(const uint8_t *key, tr_ctx_t *ctx) {
 	uint16_t k1, k2, k3;
 
@@ -154,7 +124,6 @@ inline uint8_t transputer_1(const uint8_t *key, tr_ctx_t *ctx) {
 	return res;
 }
 
-
 /* Tested, OK
    l 7ff80000 transputer_7.bin
    i 7ff8000c
@@ -170,7 +139,6 @@ inline uint8_t transputer_1(const uint8_t *key, tr_ctx_t *ctx) {
 
    result => 0xaf
    */
-
 inline uint8_t transputer_7(const uint8_t *key, tr_ctx_t *ctx) {
 	uint8_t var_1, var_2, var_3;
 	int i;
@@ -191,7 +159,6 @@ inline uint8_t transputer_7(const uint8_t *key, tr_ctx_t *ctx) {
 
 	return var_3;
 }
-
 
 /* Tested, OK
    l 7ff80000 transputer_8.bin
@@ -272,7 +239,6 @@ inline uint8_t transputer_2(const uint8_t *key, tr_ctx_t *ctx) {
 	return res;
 }
 
-
 /* ?
    l 7ff80000 transputer_10.bin
    i 7ff8000c
@@ -325,18 +291,16 @@ inline uint8_t transputer_11(const uint8_t *key, tr_ctx_t *ctx) {
 	uint8_t var_1;
 
 	var_1 = ctx->t12_st[9] ^ ( ctx->t12_st[5] ^ ctx->t12_st[1] ); /* from T12 */
-	var_1 = key[var_1 % 12];
-	return var_1;
+	return key[var_1 % 12];
 }
 
 inline uint8_t transputer_12(const uint8_t *key, tr_ctx_t *ctx) {
-	uint8_t var_1, var_2;
+	uint8_t var_2;
 
 	memcpy(ctx->t12_st, key, 12);
 	var_2 = key[7] ^ (key[3] ^ key[0]); /* from T11 */
 
-	var_1 = key[var_2 % 12];
-	return var_1;
+	return key[var_2 % 12];
 }
 
 inline uint8_t transputer_3(const uint8_t *key, tr_ctx_t *ctx) {
@@ -417,17 +381,15 @@ void sha256sum(const char *data, int len, char output[65]) {
 const char *cipher_sha256 = "a5790b4427bc13e4f4e9f524c684809ce96cd2f724e29d94dc999ec25e166a81";
 const char *plain_sha256  = "9128135129d2be652809f5a1d337211affad91ed5827474bf9bd7e285ecef321";
 
-void bf(const char *path, int start, int finish) {
-	int fd, ret, out_fd;
+void bf(const char *path) {
+	int fd, ret, hcount = 0;
 	struct stat st;
 	off_t size;
 	char *cipher_bf = NULL;
-	char *plain_bf = NULL;
 	char sha256[65];
-	char *key;
-	int i, j, k;
-
-	printf("start: %d, finish: %d\n", start, finish);
+	int i;
+	int keyfound;
+	uint8_t hchars[4] = { '-', '\\', '|', '/' };
 
 	fd = open(path, O_RDONLY);
 	if (fd == -1) {
@@ -446,52 +408,94 @@ void bf(const char *path, int start, int finish) {
 		perror("malloc cipher");
 		goto finish;
 	}
-	plain_bf = malloc(size);
-	if (!plain_bf) {
-		perror("malloc plain");
-		goto finish;
-	}
 
 	ret = read(fd, cipher_bf, size);
 	if (ret != size) {
 		printf("error during read\n");
 		goto finish;
 	}
+	close(fd);
+
 	sha256sum(cipher_bf, size, sha256);
 	if (strcmp(sha256, cipher_sha256) != 0) {
 		printf("wrong sha256: %s\n", sha256);
 		goto finish;
 	}
 
+#pragma omp parallel
+	{
+#pragma omp barrier
+		if (omp_get_thread_num() == 0) {
+			fprintf(stderr, "[+] starting %d threads\n", omp_get_num_threads());
+		}
+	}
+
+	keyfound = 0;
+#pragma omp parallel
 	for (i = 0; i < KEYS_COUNT; i++) {
-		printf("i = %d\n", i);
+		char *key;
+		int j, k, l, out_fd, thread_id;
+		char *plain_bf = NULL;
+		char plain_text_lookup[PLAIN_TEXT_LOOKUP];
+		char sha256[65];
+
+		if (keyfound == 1) {
+			i = KEYS_COUNT;
+			if (plain_bf) {
+				fprintf(stderr, "freeing plain_bf\n");
+				free(plain_bf);
+			}
+			continue;
+		}
 		key = keys[i];
-		for (j = start; j < finish; j++) {
+
+		thread_id = omp_get_thread_num();
+		if (thread_id == 0) {
+			fprintf(stderr, "\r[%c] key = ", hchars[hcount++ % 4]);
+			for (l = 0; l < 10; l++)
+				fprintf(stderr, "%2.2x", key[l] & 0xff);
+			fprintf(stderr, "????");
+			fflush(stderr);
+		}
+
+		for (j = 0; j < 256; j++) {
 			key[10] = j;
+
 			for (k = 0; k < 256; k++) {
 				key[11] = k;
-				decipher(key, cipher_bf, plain_bf, 32);
 
-				if (memmem(plain_bf, 32, "\xFF\xFF\xFF\xFF", 4) == NULL) {
+				decipher(key, cipher_bf, plain_text_lookup, PLAIN_TEXT_LOOKUP);
+
+				if (!memmem(plain_text_lookup, PLAIN_TEXT_LOOKUP, "\xFF\xFF\xFF\xFF", 4))
 					continue;
-				} else {
-					printf("[%d] found FF FF FF in plaintext\n", i);
+
+				if (!plain_bf) {
+					plain_bf = malloc(size);
+					if (!plain_bf) {
+						perror("malloc plain");
+						exit(EXIT_FAILURE);
+					}
 				}
 
 				decipher(key, cipher_bf, plain_bf, size);
 				sha256sum(plain_bf, size, sha256);
 
-				if (strncmp(sha256, plain_sha256, 64) == 0) {
-					printf("Key found\n");
-					DumpHex(key, 12);
-					out_fd = open("decrypted.bin", O_WRONLY | O_CREAT, S_IRWXU);
+				if (!strncmp(sha256, plain_sha256, SHA256_DIGEST_LENGTH))
+#pragma omp critical
+				{
+					keyfound = 1;
+					fprintf(stderr, "\r[!] key = ");
+					for (l = 0; l < 12; l++) {
+						fprintf(stderr, "%2.2x", key[l] & 0xff);
+					}
+					fprintf(stderr, "\n[+] result saved in congratulations.tar.bz2\n");
+					out_fd = open("congratulations.tar.bz2", O_WRONLY | O_CREAT,
+							S_IRUSR | S_IWUSR);
 					ret = write(out_fd, plain_bf, size);
 					if (ret != size) {
 						perror("write:");
 					}
 					close(out_fd);
-
-					goto finish;
 				}
 			}
 		}
@@ -500,9 +504,6 @@ void bf(const char *path, int start, int finish) {
 finish:
 	if (cipher_bf)
 		free(cipher_bf);
-	if (plain_bf)
-		free(plain_bf);
-	close(fd);
 }
 
 int self_test(int count) {
@@ -527,12 +528,11 @@ int main(int argc, char **argv) {
 	}
 	printf("[+] self-test passed\n");
 
-	if (argc != 4) {
-		printf("usage: %s encrypted.bin start finish\n", argv[0]);
+	if (argc != 2) {
+		printf("usage: %s encrypted.bin\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
-	bf(argv[1], atoi(argv[2]), atoi(argv[3]));
-
+	bf(argv[1]);
 
 	return EXIT_SUCCESS;
 }
