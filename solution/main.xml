@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?asciidoc-toc maxdepth="2"?>
 <?asciidoc-numbered?>
-<!DOCTYPE article [<!ENTITY % db5ent PUBLIC "-//FOPUB//ENTITIES Entities for DocBook 5" "db5.ent"> %db5ent;]>
 <article xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
 <info>
 <title>Challenge SSTIC 2015 </title>
@@ -25,14 +24,8 @@
 </info>
 <simpara>Ce document présente la méthodologie suivie pour résoudre l&#8217;édition
 2015 du challenge SSTIC.</simpara>
-<section xml:id="_introduction">
-<title>Introduction</title>
-<warning>
-<simpara>à rédiger</simpara>
-</warning>
-</section>
 <section xml:id="_rubberducky">
-<title>Analyse d&#8217;une carte mémoire</title>
+<title>Stage 1 : carte mémoire</title>
 <simpara>Le fichier <link xlink:href="http://static.sstic.org/challenge2015/challenge.zip">challenge.zip</link>
 téléchargé sur la page du challenge contient une image de carte SD, comme
 présenté ci-dessous :</simpara>
@@ -203,7 +196,7 @@ No errors detected in compressed data of stage2.zip.</programlisting>
 <simpara>L&#8217;analyse de cette archive constitue la seconde étape de ce challenge.</simpara>
 </section>
 <section xml:id="_quake3">
-<title>Quake 3</title>
+<title>Stage 2 : Quake 3</title>
 <simpara>Le fichier <literal>memo.txt</literal> de l&#8217;archive <literal>stage2.zip</literal> est le suivant :</simpara>
 <programlisting language="console" linenumbering="unnumbered">$ cat memo.txt
 Cipher: AES-OFB
@@ -219,21 +212,77 @@ semble cachée dans un jeu.</simpara>
 une carte pour le jeu Quake 3 Arena. En chargeant la carte et en explorant les
 lieux, on aperçoit certaines textures contenant des données hexadécimales. On suppose
 à ce stade qu&#8217;il s&#8217;agit de morceaux de la clé à reconstituer.</simpara>
-<simpara>La vidéo ci-dessous présente un parcours dans la carte permettant de retrouver
-l&#8217;ensemble de ces textures :</simpara>
+<simpara>La vidéo ci-dessous présente un parcours de la carte sous OpenArena
+permettant de retrouver l&#8217;ensemble de ces textures :</simpara>
+
 <simpara>Ces textures, extraites depuis le fichier <literal>sstic.pk3</literal> sont présentées ci-dessous
 dans leur ordre de découverte :</simpara>
-<simpara><inlinemediaobject>
+<informalfigure>
+<mediaobject>
 <imageobject>
-<imagedata fileref="images/rk_montage.png"/>
+<imagedata fileref="images/rk_montage.png" align="center"/>
 </imageobject>
-<textobject><phrase>rk_montage</phrase></textobject>
-</inlinemediaobject></simpara>
+<textobject><phrase>rk montage</phrase></textobject>
+</mediaobject>
+</informalfigure>
 <simpara>Enfin, la pièce finale après le rocket jump affiche la séquence à utiliser pour obtenir
 la clé finale :</simpara>
-<warning>
-<simpara>mettre une capture d&#8217;écran de la pièce</simpara>
-</warning>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_seq.jpg" align="center"/>
+</imageobject>
+<textobject><phrase>rk seq</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>En combinant les textures observées avec la séquence finale, on peut déduire
+la clé de déchiffrement :</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<tgroup cols="8">
+<colspec colname="col_1" colwidth="12*"/>
+<colspec colname="col_2" colwidth="12*"/>
+<colspec colname="col_3" colwidth="12*"/>
+<colspec colname="col_4" colwidth="12*"/>
+<colspec colname="col_5" colwidth="12*"/>
+<colspec colname="col_6" colwidth="12*"/>
+<colspec colname="col_7" colwidth="12*"/>
+<colspec colname="col_8" colwidth="12*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Drapeau</entry>
+<entry align="left" valign="top">Pulse</entry>
+<entry align="left" valign="top">Location</entry>
+<entry align="left" valign="top">Goutte</entry>
+<entry align="left" valign="top">Drapeau</entry>
+<entry align="left" valign="top">Maillon</entry>
+<entry align="left" valign="top">Wi-Fi</entry>
+<entry align="left" valign="top">PC</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara>Vert</simpara></entry>
+<entry align="left" valign="top"><simpara>Blanc</simpara></entry>
+<entry align="left" valign="top"><simpara>Orange</simpara></entry>
+<entry align="left" valign="top"><simpara>Blanc</simpara></entry>
+<entry align="left" valign="top"><simpara>Orange</simpara></entry>
+<entry align="left" valign="top"><simpara>Vert</simpara></entry>
+<entry align="left" valign="top"><simpara>Vert</simpara></entry>
+<entry align="left" valign="top"><simpara>Blanc</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara><literal>9e2f31f7</literal></simpara></entry>
+<entry align="left" valign="top"><simpara><literal>8153296b</literal></simpara></entry>
+<entry align="left" valign="top"><simpara><literal>3d9b0ba6</literal></simpara></entry>
+<entry align="left" valign="top"><simpara><literal>7695dc7c</literal></simpara></entry>
+<entry align="left" valign="top"><simpara><literal>b0daf152</literal></simpara></entry>
+<entry align="left" valign="top"><simpara><literal>b54cdc34</literal></simpara></entry>
+<entry align="left" valign="top"><simpara><literal>ffe0d355</literal></simpara></entry>
+<entry align="left" valign="top"><simpara><literal>26609fac</literal></simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
 <simpara>Une fois la clé identifiée, le déchiffrement peut être réalisé par le script
 suivant :</simpara>
 <programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
@@ -282,7 +331,7 @@ bourrage :</simpara>
 0007a500  10 10 10 10 10 10 10 10  10 10 10 10 10 10 10 10  |................|
 0007a510</programlisting>
 <simpara>En supprimant les 16 derniers octets, on retrouve la bonne empreinte :</simpara>
-<programlisting language="console" linenumbering="unnumbered">$ dd if=decrypted bs=1 count=$(( $(stat -c %s decrypted)  - 16)) | sha256sum -
+<programlisting language="console" linenumbering="unnumbered">$ dd if=decrypted bs=1 count=$(( $(stat -c %s decrypted) - 16)) | sha256sum -
 500992+0 records in
 500992+0 records out
 500992 bytes (501 kB) copied, 0.520727 s, 962 kB/s
@@ -296,8 +345,8 @@ Archive:  decrypted
 No errors detected in compressed data of decrypted.</programlisting>
 <simpara>L&#8217;étude de ces fichiers fait l&#8217;objet de l&#8217;étape suivante du challenge.</simpara>
 </section>
-<section xml:id="_paint">
-<title>Paint</title>
+<section xml:id="_stage_3_paint">
+<title>Stage 3 : Paint</title>
 <simpara>Le fichier <literal>memo.txt</literal> obtenu à l&#8217;étape précédente contient les informations
 suivantes :</simpara>
 <programlisting language="console" linenumbering="unnumbered"># cat memo.txt
@@ -379,7 +428,7 @@ require 'sdl'
 
 clicks = []
 x, y = 0, 0
-min_x, max_x, min_y, max_y = 0, 0, 0, 0
+min_x, max_x, min_y, max_y = 0, 0, 0, 0 <co xml:id="CO2-1"/>
 
 IO.popen("tshark -r input/paint.cap -V").each_line do |line|
   next unless line =~ /Leftover Capture Data: (.{8})/
@@ -414,7 +463,7 @@ black = screen.format.map_rgb(0, 0, 0)
 screen.fill_rect(0, 0, width, height, white)
 
 clicks.each do |x, y|
-  screen.put_pixel(x - min_x + extra_space / 2,
+  screen.put_pixel(x - min_x + extra_space / 2, <co xml:id="CO2-2"/>
                    y - min_y + extra_space / 2,
                    black)
 end
@@ -422,6 +471,14 @@ end
 screen.flip
 sleep(2)
 screen.save_bmp("screen.bmp")</programlisting>
+<calloutlist>
+<callout arearefs="CO2-1">
+<para>Dimensions de la bounding-box</para>
+</callout>
+<callout arearefs="CO2-2">
+<para>Translation des coordonnées vers la bounding-box</para>
+</callout>
+</calloutlist>
 <simpara>Le résultat obtenu est le suivant :</simpara>
 <informalfigure>
 <mediaobject>
@@ -502,23 +559,765 @@ No errors detected in compressed data of input/decrypted.</programlisting>
 <simpara>L&#8217;empreinte sha256 est correcte et le fichier obtenu est une archive zip
 contenant un fichier HTML qui sera analysé dans l&#8217;étape suivante.</simpara>
 </section>
+<section xml:id="_stage_4_javascript">
+<title>Stage 4 : JavaScript</title>
+<simpara>Le chargement du fichier <literal>stage4.html</literal> obtenu précédemment dans un navigateur
+donne le résultat suivant :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_stage4_1.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk stage4 1</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Pour comprendre la raison de l&#8217;erreur, on est alors tenté de regarder le code source
+de la page. Le corps du fichier est uniquement constitué de code JavaScript
+qui commence par l&#8217;initialisation d&#8217;une variable <literal>data</literal> :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_stage4_2.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk stage4 2</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Ensuite, le script définit une seconde variable <literal>hash</literal> puis exécute une série
+d&#8217;instructions JavaScript obfusquées :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_stage4_3.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk stage4 3</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Le premier réflexe est d&#8217;essayer de réindenter le fichier pour faciliter sa
+lisibilité. Pour cela, on passe en mode hipster moustachu en installant Node.js et l&#8217;outil
+<link xlink:href="https://github.com/beautify-web/js-beautify"><literal>js-beautify</literal></link>. Le résultat obtenu
+est le suivant :</simpara>
+<programlisting language="html" linenumbering="unnumbered">&lt;html&gt;
+
+&lt;head&gt;
+[...]
+&lt;/head&gt;
+
+&lt;body&gt;
+    &lt;script&gt;
+        var data = "2b1f25cf8db5d243f[...]bfd3ac1646ffe2";
+        var hash = "08c3be636f7dffd91971f65be4cec3c6d162cb1c";
+        $ = ~[];
+        $ = {
+            ___: ++$,
+            $$$$: (![] + "")[$],
+            __$: ++$,
+            $_$_: (![] + "")[$],
+            _$_: ++$,
+            $_$$: ({} + "")[$],
+            $$_$: ($[$] + "")[$],
+            _$$: ++$,
+            $$$_: (!"" + "")[$],
+            $__: ++$,
+            $_$: ++$,
+            $$__: ({} + "")[$],
+            $$_: ++$,
+            $$$: ++$,
+            $___: ++$,
+            $__$: ++$
+        };
+        $.$_ = ($.$_ = $ + "")[$.$_$] + ($._$ = $.$_[$.__$]) + ($.$$ = ($.$ + "")[$.__$]) + ((!$) + "")[$._$$] + ($.__ = $.$_[$.$$_]) + ($.$ = (!"" + "")[$.__$]) + ($._ = (!"" + "")[$._$_]) + $.$_[$.$_$] + $.__ + $._$ + $.$;
+        $.$$ = $.$ + (!"" + "")[$._$$] + $.__ + $._ + $.$ + $.$$;
+        $.$ = ($.___)[$.$_][$.$_];
+        $.$($.$($.$$ + "\"" + "__=" + $.$$_$ + [...] + "\"")())();
+    &lt;/script&gt;
+&lt;/body&gt;</programlisting>
+<simpara>On peut alors lancer un interpréteur JavaScript avec Node.js et exécuter
+les instructions ligne par ligne pour suivre le déroulement du script :</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">&gt; $ = ~[];
+-1
+&gt; $ = { ___: ++$, $$$$: (![] + "")[$], __$: ++$, $_$_: (![] + "")[$], _$_: ++$, $_$$: ({} + "")[$], $$_$: ($[$] + "")[$], _$$: ++$, $$$_: (!"" + "")[$], $__: ++$, $_$: ++$, $$__: ({} + "")[$], $$_: ++$, $$$: ++$, $___: ++$, $__$: ++$ };
+{ ___: 0,
+  '$$$$': 'f',
+  '__$': 1,
+  '$_$_': 'a',
+  '_$_': 2,
+  '$_$$': 'b',
+  '$$_$': 'd',
+  '_$$': 3,
+  '$$$_': 'e',
+  '$__': 4,
+  '$_$': 5,
+  '$$__': 'c',
+  '$$_': 6,
+  '$$$': 7,
+  '$___': 8,
+  '$__$': 9 }
+&gt; $.$_ = ($.$_ = $ + "")[$.$_$] + ($._$ = $.$_[$.__$]) + ($.$$ = ($.$ + "")[$.__$]) + ((!$) + "")[$._$$] + ($.__ = $.$_[$.$$_]) + ($.$ = (!"" + "")[$.__$]) + ($._ = (!"" + "")[$._$_]) + $.$_[$.$_$] + $.__ + $._$ + $.$;
+'constructor'
+&gt; $.$$ = $.$ + (!"" + "")[$._$$] + $.__ + $._ + $.$ + $.$$;
+'return'
+&gt; $.$ = ($.___)[$.$_][$.$_];
+[Function: Function]</programlisting>
+<simpara>Ces instructions se contentent de définir un objet <literal>$</literal>. On peut remarquer que
+le champ <literal>$.$</literal> est une fonction qui retourne elle-même une fonction (prototype
+<literal>Function: Function</literal>).</simpara>
+<simpara>L&#8217;exécution de la dernière ligne retourne l&#8217;erreur suivante :</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">&gt;  $.$($.$($.$$ + "\"" + "__=" + $.$$_$ + [...] + "\"")())(); <co xml:id="CO3-1"/>
+ReferenceError: document is not defined
+    at eval (eval at &lt;anonymous&gt; (repl:1:3), &lt;anonymous&gt;:2:4)
+    at repl:1:13972
+    at REPLServer.self.eval (repl.js:110:21)
+    at repl.js:249:20
+    at REPLServer.self.eval (repl.js:122:7)
+    at Interface.&lt;anonymous&gt; (repl.js:239:12)
+    at Interface.EventEmitter.emit (events.js:95:17)
+    at Interface._onLine (readline.js:202:10)
+    at Interface._line (readline.js:531:8)
+    at Interface._ttyWrite (readline.js:760:14)</programlisting>
+<calloutlist>
+<callout arearefs="CO3-1">
+<para>double appel de la fonction <literal>$.$</literal> sur une chaîne de caractères</para>
+</callout>
+</calloutlist>
+<simpara>Le script référence l&#8217;objet <literal>document</literal>, qui existe dans le contexte d&#8217;un navigateur
+mais pas dans celui d&#8217;un interpréteur en console. On constate la présence de la fonction
+<literal>eval</literal> en haut de la pile d&#8217;appels. On soupçonne alors que le code JavaScript final
+est construit par concaténation de différentes chaînes de caractères puis exécuté
+avec un appel à <literal>eval</literal> (ou fonction équivalente).</simpara>
+<simpara>Comme évoqué précédemment, la fonction <literal>$.$</literal> retourne une fonction. En lui passant
+des arguments de différente nature, on peut essayer de deviner son comportement :</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">&gt; f = $.$('coucou');
+[Function]
+&gt; f();
+ReferenceError: coucou is not defined
+    at eval (eval at &lt;anonymous&gt; (repl:1:7), &lt;anonymous&gt;:2:1)
+    at repl:1:1
+    at REPLServer.self.eval (repl.js:110:21)
+    at repl.js:249:20
+    at REPLServer.self.eval (repl.js:122:7)
+    at Interface.&lt;anonymous&gt; (repl.js:239:12)
+    at Interface.EventEmitter.emit (events.js:95:17)
+    at Interface._onLine (readline.js:202:10)
+    at Interface._line (readline.js:531:8)
+    at Interface._ttyWrite (readline.js:760:14)</programlisting>
+<simpara>La fonction <literal>$.$</literal> semble définir une nouvelle fonction qui exécute
+la chaîne de caractères passée en argument. Ce comportement est confirmé par le
+test ci-dessous :</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">&gt; f = $.$('console.log(2+3)');
+[Function]
+&gt; f();
+5</programlisting>
+<simpara>A ce stade, on cherche à récupérer la chaîne de caractères avant les deux
+appels successifs à la fonction <literal>$.$</literal> :</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">&gt; s = $.$$ + "\"" + "__=" + [...] + "\\" + $.__$ + $.__$ + "\"";
+'return"__=docu\\155e\\156t;$$$=[...]_,$_$);\\12\\11\\11"'</programlisting>
+<simpara>Le résultat correspond bien à du code JavaScript qui semble se contenter de
+retourner une seconde chaîne de caractères. Un appel à la fonction <literal>$.$</literal> permet
+d&#8217;obtenir le code JavaScript qui référence bien l&#8217;objet <literal>document</literal> :</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">&gt; s1 = $.$(s)();
+'__=document;$$$=\'stage5\';$$_$=\'load\';[...];$_$);\n\t\t'
+&gt; console.log(s1);
+__=document;$$$='stage5';$$_$='load';[...],$_$);</programlisting>
+<simpara>Le contenu de la variable <literal>s1</literal> est sauvegardé dans un fichier puis le code
+est réindenté avec <literal>js-beautify</literal> pour obtenir le résultat ci-dessous :</simpara>
+<formalpara>
+<title>Fichier <literal>obfu.js</literal></title>
+<para>
+<programlisting language="javascript" linenumbering="unnumbered">__ = document;
+$$$ = 'stage5';
+$$_$ = 'load';
+$_$$ = ' ';
+_$$$$$ = 'user';
+_$$$ = 'div';
+$$_$$$ = 'navigator';
+$$_$$ = 'preferences';
+[...]
+________________________ = '';
+_________________________ = 'byteLength';
+__________________________ = $_$$$ + 'String';
+__[___]('&lt;h' + ______________ + '&gt;Down' + $$_$ + $_$$ + 'manager&lt;/h' + ______________ + '&gt;');
+__[___]('&lt;' + _$$$ + $_$$ + 'id' + $$$$_ + _$$$$ + ___$ + _$$$$ + '&gt;&lt;i&gt;' + $$_$ + 'ing...&lt;/i&gt;&lt;/' + _$$$ + '&gt;');
+__[___]('&lt;' + _$$$ + $_$$ + 'style' + $$$$_ + _$$$$ + 'display:none' + _$$$$ + '&gt;&lt;a' + $_$$ + 'target' + $$$$_ + _$$$$ + 'blank' + _$$$$ + $_$$ + $$$_$ + $$$$_ + _$$$$ + $$$$$ + '://browser/content/' + $$_$$ + '/' + $$_$$ + '.xul' + _$$$$ + '&gt;Back' + $_$$ + $_$$$ + $_$$ + $$_$$ + '&lt;/a&gt;&lt;/' + _$$$ + '&gt;');
+
+[...]
+
+function ___________________________() {
+    $_ = _____(__________[_____________](__________[__________________](______$_) + ______________, _________________));
+    _$__ = _____(__________[_____________](__________[__________________](_______$) - _________________, _________________));
+    _$ = {};
+    _$[_$______] = __$_____;
+    _$[___$____] = $_;
+    _$[____________] = _$__[____________] * ________________;
+    __$[$____](_$_, _$__, _$, false, [__$_])[__$__](function(_$___) {
+        __$[__$_](_$, _$___, _____________________(____$_))[__$__](function(___$_) {
+            ____$ = new ______________________(___$_);
+            __$[_$____](___$__, ____$)[__$__](function(____$$) {
+                if (_____$ == _______________________(new ______________________(____$$))) {
+                    _____$_ = {};
+                    _____$_[______$] = $_______;
+                    _____$ = new _$_____([____$], _____$_);
+                    __$____ = ___$___[____$__](_____$);
+                    __[____](___$)[__$___] = ____$___ + __$____ + _____$__;
+                } else {
+                    __[____](___$)[__$___] = $;
+                }
+            });
+        }).catch(function() {
+            __[____](___$)[__$___] = $;
+        });
+    }).catch(function() {
+        __[____](___$)[__$___] = $;
+    });
+}
+$$[$________](___________________________, $_$);</programlisting>
+</para>
+</formalpara>
+<simpara>La structure du code commence à apparaître mais sa compréhension est rendue
+difficile par l&#8217;utilisation de nombreuses variables nommées de façon similaire.</simpara>
+<simpara>L&#8217;outil <xref linkend="_clean_js"/> basé sur <link xlink:href="http://esprima.org">esprima</link> a été développé pour simplifier le code
+obtenu. Cet outil va remplacer les références aux constantes globales par les valeurs associées
+et simplifier certaines expressions binaires (concaténation de chaînes de caractères et
+opérations arithmétiques sur des entiers).</simpara>
+<simpara>L&#8217;exécution de cet outil, ainsi qu&#8217;un retraitement manuel (renommage des fonctions
+et des variables locales), permet d&#8217;obtenir le code nettoyé ci-dessous :</simpara>
+<programlisting language="javascript" linenumbering="unnumbered">var data = "2b1f25c[...]1646ffe2";
+var hash = "08c3be636f7dffd91971f65be4cec3c6d162cb1c";
+
+ua = window.navigator.userAgent;
+document.write('&lt;h1&gt;Download manager&lt;/h1&gt;');
+document.write('&lt;div id="status"&gt;&lt;i&gt;loading...&lt;/i&gt;&lt;/div&gt;');
+document.write('&lt;div style="display:none"&gt;&lt;a target="blank" href="chrome://browser/content/preferences/preferences.xul"&gt;Back to preferences&lt;/a&gt;&lt;/div&gt;');
+
+function stringToBytes(arg) {
+    res = [];
+    for (i = 0; i &lt; arg.length; ++i)
+        res.push(arg.charCodeAt(i));
+    return new Uint8Array(res);
+}
+
+function hexToBytes(arg) {
+    res = [];
+    for (i = 0; i &lt; arg.length / 2; ++i)
+        res.push(parseInt(arg.substr(i * 2, 2), 16));
+    return new Uint8Array(res);
+}
+
+function bytesToHex(arg) {
+    res = '';
+    for (i = 0; i &lt; arg.byteLength; ++i) {
+        s = arg[i].toString(16);
+        if (s.length &lt; 2)
+            res += 0;
+        res += s;
+    }
+    return res;
+}
+
+function f3() {
+    iv = stringToBytes(ua.substr(ua.indexOf('(') + 1, 16));
+    key = stringToBytes(ua.substr(ua.indexOf(')') - 16, 16));
+    ctx = {};
+    ctx['name'] = 'AES-CBC';
+    ctx['iv'] = iv;
+    ctx['length'] = key['length'] * 8;
+    window.crypto.subtle.importKey('raw', key, ctx, false, ['decrypt']).then(function(arg0) {
+        window.crypto.subtle.decrypt(ctx, arg0, hexToBytes(data)).then(function(arg1) {
+            plainText = new Uint8Array(arg1);
+            window.crypto.subtle.digest({
+                name: 'SHA-1'
+            }, plainText).then(function(arg2) {
+                if (hash == bytesToHex(new Uint8Array(arg2))) {
+                    props = {};
+                    props['type'] = 'application/octet-stream';
+                    blob = new Blob([plainText], props);
+                    url = URL.createObjectURL(blob);
+                    document.getElementById('status').innerHTML = '&lt;a href="' + url + '" download="stage5.zip"&gt;download stage5&lt;/a&gt;';
+                } else {
+                    document.getElementById('status').innerHTML = '&lt;b&gt;Failed to load stage5&lt;/b&gt;';
+                }
+            });
+        }).catch(function() {
+            document.getElementById('status').innerHTML = '&lt;b&gt;Failed to load stage5&lt;/b&gt;';
+        });
+    }).catch(function() {
+        document.getElementById('status').innerHTML = '&lt;b&gt;Failed to load stage5&lt;/b&gt;';
+    });
+}
+window.setTimeout(f3, 1000);</programlisting>
+<simpara>Ce code extrait un vecteur d&#8217;initialisation et une clé de déchiffrement
+depuis l&#8217;agent utilisateur (&#8220;User-Agent&#8221;) du navigateur. Le déchiffrement
+est ensuite effectué en AES-CBC puis une empreinte SHA-1 est calculée sur
+les données obtenues. Si cette empreinte correspond à la valeur de la variable
+<literal>hash</literal>, alors un lien vers les données déchiffrées est ajouté à la page. Sinon,
+le message <literal>&lt;b&gt;Failed to load stage5&lt;/b&gt;</literal> est affiché.</simpara>
+<simpara>Pour arriver à déchiffrer correctement, il faut donc déterminer l&#8217;agent utilisateur
+qui permet de retrouver le bon SHA-1. Trois indices dans le fichier HTML permettent
+d&#8217;en savoir plus sur cet agent utilisateur :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>la page contient un lien vers <literal>chrome://browser/content/preferences/preferences.xul</literal>
+qui n&#8217;est valable que sous Firefox ;</simpara>
+</listitem>
+<listitem>
+<simpara>le code JavaScript fait appel à la bibliothèque <literal>crypto.subtle</literal> qui n&#8217;est compatible
+qu&#8217;avec les versions de Firefox ultérieures à 34 (d&#8217;après la page
+<link xlink:href="https://developer.mozilla.org/fr/docs/Web/API/SubtleCrypto#Browser_compatibility">SubleCrypto#Browser_compatibility</link>) ;</simpara>
+</listitem>
+<listitem>
+<simpara>enfin, le fichier HTML utilise la série de polices <literal>Lucida Grande, Lucida Sans Unicode, Lucida Sans, Geneva, Verdana, sans-serif</literal> :
+une recherche sur Internet retourne la page Wikipedia <link xlink:href="http://en.wikipedia.org/wiki/Lucida_Grande">Lucida_Grande</link> qui précise
+que cette police est utilisée sous MAC OS X.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Sur la base de ces informations, il ne reste plus qu&#8217;à générer tous les agent utilisateurs
+possibles, en respectant la convention décrite sur la page <link xlink:href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Gecko_user_agent_string_reference">Gecko_user_agent_string_reference</link>,
+tenter un déchiffrement après avoir extrait le vecteur d&#8217;initialisation et la clé puis
+vérifier l&#8217;empreinte SHA-1 des données déchiffrées jusqu&#8217;à obtenir celle attendue.</simpara>
+<simpara>Le script Ruby ci-dessous implémente cette méthode pour retrouver l&#8217;agent utilisateur recherché :</simpara>
+<formalpara>
+<title>bf.rb</title>
+<para>
+<programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
+
+require 'openssl'
+require 'digest'
+
+bindata = File.open("data.bin", "rb").read
+expected_sha1 = "08c3be636f7dffd91971f65be4cec3c6d162cb1c"
+
+def extract_key_iv_from_ua(ua)
+  iv = ua[ua.index('(') + 1, 16]
+  key = ua[ua.index(')') - 16, 16]
+  return [iv, key]
+end
+
+def generate_ua_list
+  res = []
+  s = "Mozilla/5.0"
+  platforms = []
+
+  osx_versions = [ "10.0", "10.1", "10.2", "10.3", "10.4", "10.5", "10.6", "10.7", "10.8", "10.9", "10.10" ]
+  osx_versions.each do |ver|
+    platforms &lt;&lt; "Macintosh; Intel Mac OS X #{ver}"
+    platforms &lt;&lt; "Macintosh; PPC Mac OS X #{ver}"
+  end
+
+  gecko_versions = []
+  (34..38).each { |i| gecko_versions &lt;&lt; "#{i}.0" }
+
+  platforms.each do |platform|
+    gecko_versions.each { |version| res &lt;&lt; "#{s} (#{platform}; rv:#{version}) Gecko" }
+  end
+
+  return res
+end
+
+generate_ua_list.each do |ua|
+  iv, key = extract_key_iv_from_ua(ua)
+
+  cipher = OpenSSL::Cipher::AES.new('128-CBC')
+  cipher.decrypt
+  cipher.key = key
+  cipher.iv = iv
+
+  begin
+    plain = cipher.update(bindata) + cipher.final
+    sha1 = Digest::SHA1.hexdigest(plain)
+    if sha1 == expected_sha1 then
+      puts "[*] Found, ua = #{ua}"
+      File.open("stage5.zip", "wb") { |f| f.write plain }
+      exit
+    end
+  rescue OpenSSL::Cipher::CipherError =&gt; e
+    puts e
+  end
+
+end</programlisting>
+</para>
+</formalpara>
+<simpara>Son exécution sur le fichier <literal>data.bin</literal> contenant les données de la variable <literal>data</literal>
+retourne le résultat suivant :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ ./bf.rb
+bad decrypt
+bad decrypt
+[...]
+bad decrypt
+bad decrypt
+[*] Found, ua = Mozilla/5.0 (Macintosh; Intel Mac OS X 10.6; rv:35.0) Gecko
+$ file stage5.zip
+stage5.zip: Zip archive data, at least v2.0 to extract
+$ unzip -t stage5.zip
+Archive:  stage5.zip
+    testing: input.bin                OK
+    testing: schematic.pdf            OK
+No errors detected in compressed data of stage5.zip.</programlisting>
+</section>
+<section xml:id="_stage_5_st20">
+<title>Stage 5 : ST20</title>
+<section xml:id="_découverte">
+<title>Découverte</title>
+<simpara>L&#8217;archive obtenue suite à la résolution de l&#8217;étape précédente contient deux fichiers, <literal>input.bin</literal> et
+<literal>schematic.pdf</literal>.</simpara>
+<simpara>D&#8217;après le résultat de la commande <literal>file</literal>, le fichier <literal>input.bin</literal> ne correspond
+pas à un format connu. Cependant, il contient quelques chaînes de caractères
+intéressantes, comme présenté ci-dessous :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ file input.bin
+input.bin: data
+$ strings input.bin
+$ P#
+$z$y
+Boot ok
+Code Ok
+Decrypt
+$ P#
+[...]
+a       qC$
+ e         |
+KEY:
+congratulations.tar.bz2
+[...]</programlisting>
+<simpara>Le fichier <literal>schematic.pdf</literal> correspond à l&#8217;image ci-dessous :</simpara>
+<figure>
+<title>schematic.pdf</title>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_schematic.svg" align="center"/>
+</imageobject>
+<textobject><phrase>rk schematic</phrase></textobject>
+</mediaobject>
+</figure>
+<simpara>Plusieurs informations intéressantes sont sur ce schéma :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>on y découvre la notion de <link xlink:href="http://en.wikipedia.org/wiki/Transputer">&#8220;transputer&#8221;</link>
+qui est une architecture matérielle particulière conçue pour effectuer des calculs en parallèle ;</simpara>
+</listitem>
+<listitem>
+<simpara>le vecteur de test fourni permet de déduire qu&#8217;il s&#8217;agit d&#8217;une implémentation d&#8217;un
+algorithme de déchiffrement ;</simpara>
+</listitem>
+<listitem>
+<simpara>enfin, toujours au niveau de ce même vecteur de test, la chaîne déchiffrée mentionne une architecture
+dite &#8220;ST20&#8221;.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>La section <link xlink:href="http://en.wikipedia.org/wiki/Transputer#Design">Design</link> de la page Wikipedia sur les
+transputers explique les grands principes de cette architecture matérielle. En particulier,
+un transputer est capable de communiquer avec d&#8217;autres transputers à l&#8217;aide d&#8217;un lien série. De plus,
+un transputer peut démarrer de façon classique à l&#8217;aide d&#8217;une ROM ou de façon plus originale
+en utilisant un lien série. Le schéma fourni laisse penser que le transputer 0 démarre
+de cette façon, en lisant les données du fichier <literal>input.bin</literal> avec un lien série.</simpara>
+<simpara>La <link xlink:href="http://pdf.datasheetcatalog.com/datasheet/stmicroelectronics/4942.pdf">documentation</link> disponible
+sur le processeur ST20 détaille ce mode de démarrage :</simpara>
+<blockquote>
+<attribution>
+ST20-GP1 datasheet
+</attribution>
+<simpara>When booting from a link, the ST20-GP1 will wait for the first bootstrap message to arrive on the
+link. The first byte received down the link is the control byte. If the control byte is greater than 1 (i.e.
+2 to 255), it is taken as the length in bytes of the boot code to be loaded down the link. The bytes
+following the control byte are then placed in internal memory starting at location MemStart.
+Following reception of the last byte the ST20-GP1 will start executing code at MemStart. The
+memory space immediately above the loaded code is used as work space. A byte arriving on the
+bootstrapping link after the last bootstrap byte, is retained and no acknowledge is sent until a
+process inputs from the link.</simpara>
+</blockquote>
+<simpara>Pour comprendre la routine de déchiffrement implémentée au sein du fichier <literal>input.bin</literal>,
+il va être nécessaire de désassembler les données correspondant au programme puis
+de les analyser pour retrouver l&#8217;algorithme. Fort heureusement, un désassembleur
+pour le processeur ST20 est disponible sur Internet : <link xlink:href="http://digifusion.jeamland.org/st20dis">st20dis</link>.</simpara>
+<simpara>De plus, l&#8217;identification sur Internet d&#8217;un
+<link xlink:href="http://pdf.datasheetcatalog.com/datasheet/SGSThomsonMicroelectronics/mXruvtu.pdf">manuel</link> sur
+le jeu d&#8217;instruction du processeur aide à interpréter la sortie du désassembleur.</simpara>
+</section>
+<section xml:id="_rétro_conception">
+<title>Rétro-conception</title>
+<simpara>Pour commencer, le premier réflexe est alors de lancer <literal>st20dis</literal> sur le fichier <literal>input.bin</literal> en commençant
+à désassembler à l&#8217;octet 0 :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ ./st20dis-linux -A input.bin
+; New subroutine 0+1; References: 0, Local Vars: 0
+00000000: f8                    sub_0:        prod             ; product - A = A * B (no overflow check)
+
+; New subroutine 1+d; References: 0, Local Vars: 76
+00000001: 64 b4                 sub_1:        ajw #-4c         ; adjust workspace - Move workspace pointer
+00000003: 40                                  ldc #0           ; load constant - A = n, B=A, C=B
+00000004: d1                                  stl #1 [var_1]   ; store local - workspace[n] = A, A=B, B=C
+00000005: 40                                  ldc #0           ; load constant - A = n, B=A, C=B
+00000006: d3                                  stl #3 [var_3]   ; store local - workspace[n] = A, A=B, B=C
+00000007: 24 f2                               mint             ; minimum integer - A = MostNeg
+00000009: 24 20 50                            ldnlp #400       ; load non-local pointer - A = &amp;A[n]
+0000000c: 23 fc                               gajw             ; general adjust workspace - Wptr &lt;=&gt; A
+
+; New subroutine e+f8; References: 0, Local Vars: 76
+0000000e: 64 b4                 sub_e:        ajw #-4c         ; adjust workspace - Move workspace pointer
+00000010: 2c 49                               ldc #c9          ; load constant - A = n, B=A, C=B
+00000012: 21 fb                               ldpi [str_dd]    ; Load pointer to instruction - A = next instruction + A
+00000014: 24 f2                               mint             ; minimum integer - A = MostNeg
+[...]</programlisting>
+<simpara>Le désassembleur a l&#8217;air de fonctionner correctement et la sortie semble cohérente.
+Cependant, la toute première instruction semble étrange. Le registre <literal>A</literal>
+est mis à jour avec le résultat de la multiplication entre les registres <literal>A</literal>
+et <literal>B</literal> sachant que, d&#8217;après la documentation, tous les registres sont dans un
+état indéfini. En réalité, le premier octet du fichier (<literal>0xf8</literal>) correspond
+à la valeur &#8220;control byte&#8221; qui spécifie, lors d&#8217;un démarrage via un lien série,
+la quantité de données qui sera placée dans la mémoire du processeur pour être
+executée.</simpara>
+<simpara>Le code du démarrage du premier transputer est alors extrait avec les commandes
+ ci-dessous :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ dd if=input/input.bin count=1 bs=1 | xxd -
+0000000: f8 <co xml:id="CO4-1"/>
+$ dd if=input/input.bin bs=1 skip=1 count=$((0xf8)) of=t0.bin</programlisting>
+<calloutlist>
+<callout arearefs="CO4-1">
+<para>valeur du control byte</para>
+</callout>
+</calloutlist>
+<simpara>Le désassembleur <literal>st20dis</literal> est alors appelé sur le fichier <literal>t0.bin</literal> résultat
+pour enfin obtenir le fichier <xref linkend="_t0_asm"/>.</simpara>
+</section>
+<section xml:id="_détermination_de_la_clé">
+<title>Détermination de la clé</title>
+<simpara>Maintenant que l&#8217;algorithme de la routine déchiffrement est globalement compris,
+il reste à déterminer la clé valide permettant de déchiffrer les données
+embarquées dans le fichier <literal>input.bin</literal>. La démarche initiale est la suivante :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>recoder une implémentation, si possible rapide, de la routine de déchiffrement ;</simpara>
+</listitem>
+<listitem>
+<simpara>vérifier que l&#8217;implémentation passe le vecteur de test ;</simpara>
+</listitem>
+<listitem>
+<simpara>déterminer une liste de clés candidates et, pour chacune, :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>effectuer un déchiffrement,</simpara>
+</listitem>
+<listitem>
+<simpara>calculer l&#8217;empreinte SHA256 des données obtenues et comparer le résultat
+avec l&#8217;empreinte <literal>decrypted</literal> présente sur le schéma <literal>schematic.pdf</literal>.</simpara>
+</listitem>
+</itemizedlist>
+</listitem>
+</itemizedlist>
+<simpara>Si les deux empreintes sont identiques, alors la clé candidate courante est celle
+recherchée.</simpara>
+<simpara>Cette approche se heurte cependant à plusieurs difficultés :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>sachant que la longueur de la clé est de 12 octets, soit 96 bits,
+l&#8217;espace de clés à tester est gigantesque (2^96 clés différentes) ;</simpara>
+</listitem>
+<listitem>
+<simpara>l&#8217;algorithme de déchiffrement n&#8217;est pas particulièrement efficace car il agit
+octet par octet sur les données chiffrées : le test d&#8217;une clé est en conséquence
+assez long.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Pour poursuivre, ces deux difficultés doivent être résolues. Au niveau du nombre de clés à tester,
+il est possible de fortement réduire leur nombre. En effet, si on reprend l&#8217;algorithme
+de déchiffrement, on peut se rendre compte que les 12 premiers octets déchiffrés
+sont directement corrélés avec la clé par la formule suivante :</simpara>
+<informalequation>
+<mediaobject><textobject><phrase><![CDATA[p_i = c_i \oplus ( (2 * k_i + i) % 256 )]]></phrase></textobject></mediaobject>
+</informalequation>
+<simpara>où p_i est l&#8217;octet déchiffré, c_i l&#8217;octet chiffré et k_i l&#8217;octet
+de clé à la position i, pour i in [0, 11]. L&#8217;opération modulo 256
+est nécessaire car le résultat est stocké dans octet (soit un entier de 8 bits).</simpara>
+<simpara>La formule précédente revient à dire qu&#8217;il existe un entier n tel que :</simpara>
+<informalequation>
+<mediaobject><textobject><phrase><![CDATA[256 * n + c_i \oplus p_i = 2 * k_i + i]]></phrase></textobject></mediaobject>
+</informalequation>
+<simpara>Un octet de clé est donc corrélé avec les octets de clair et chiffré correspondants
+de la façon suivante :</simpara>
+<informalequation>
+<mediaobject><textobject><phrase><![CDATA[k_i = (256 * n + c_i \oplus p_i - i) / 2 = 128 * n + (c_i \oplus p_i - i) / 2]]></phrase></textobject></mediaobject>
+</informalequation>
+<simpara>Par conséquent, en identifiant un clair connu sur le début du fichier, on pourra
+alors réduire grandement l&#8217;espace des clés à tester. On peut alors faire l&#8217;hypothèse,
+ à cause de la présence de la chaîne <literal>congratulations.tar.bz2</literal> dans le fichier <literal>input.bin</literal>,
+que les données déchiffrées correspondant à une archive au standard bzip2.</simpara>
+<simpara>La page Wikipedia sur bzip2 décrit le <link xlink:href="http://en.wikipedia.org/wiki/Bzip2#File_format">format</link> d&#8217;un
+fichier bzip2. On identifie alors certaines valeurs constantes au début du fichier :</simpara>
+<screen>.magic:16                       = 'BZ' signature/magic number
+.version:8                      = 'h' for Bzip2 ('H'uffman coding), '0' for Bzip1 (deprecated)
+.hundred_k_blocksize:8          = '1'..'9' block-size 100 kB-900 kB (uncompressed)
+
+.compressed_magic:48            = 0x314159265359 (BCD (pi))
+.crc:32                         = checksum for this block</screen>
+<simpara>Il s&#8217;agit donc de :</simpara>
+<itemizedlist>
+<listitem>
+<simpara><literal>BZh</literal> pour les trois premiers octets ;</simpara>
+</listitem>
+<listitem>
+<simpara>une valeur comprise entre 1 et 9 pour le quatrième octet ;</simpara>
+</listitem>
+<listitem>
+<simpara>enfin la valeur de Pi pour les 6 octets suivants.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Les 10 premiers octets sont donc prévisibles et permettent de limiter les clés
+candidates. Pour cela, un script Ruby a été développé qui détermine, pour les 10
+premiers octets, les valeurs possibles d&#8217;un octet de clé en fonction de l&#8217;octet
+de clair connu et de l&#8217;octet chiffré correspondants.</simpara>
+<formalpara>
+<title>find-key.rb</title>
+<para>
+<programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
+
+cipher = [ 0xfe, 0xf3, 0x50, 0xdc, 0x81, 0xbc, 0x97, 0x27, 0x89, 0xac ]
+plains = []
+(1..9).each do |i|
+  plains &lt;&lt; [ 'B'.ord, 'Z'.ord, 'h'.ord, 0x30 + i, 0x31, 0x41, 0x59, 0x26, 0x53, 0x59 ]
+end
+
+key = []
+
+plains.each do |plain|
+  (0..9).each do |i|
+    (0..255).each do |c|
+      t = cipher[i] ^ (( 2 * c + i ) &amp; 0xff)
+      if t == plain[i]
+        a = (key[i] ||= [])
+        a &lt;&lt; c unless a.include? c
+      end
+    end
+  end
+end
+
+keys = key[0].product(*key[1..-1])
+
+result = "#define KEYS_COUNT #{keys.size}\n\n"
+result &lt;&lt; "char keys[KEYS_COUNT][12] = {\n"
+
+result &lt;&lt; keys.map do |x|
+  a = x + [0, 0]
+  "    { " + a.map {|y| "0x%02x" % y}.join(", ") + " }"
+end.join(",\n")
+
+result &lt;&lt; "\n};"
+
+puts result</programlisting>
+</para>
+</formalpara>
+<simpara>Le script génère un fichier <literal>.h</literal> contenant 5120 clés qui peut alors être inclus dans un programme en
+C pour effectuer l&#8217;attaque par force brute.</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ ./find-key.rb
+#define KEYS_COUNT 5120
+
+char keys[KEYS_COUNT][12] = {
+    { 0x5e, 0x54, 0x1b, 0x75, 0x56, 0x7c, 0x64, 0x7d, 0x69, 0x76, 0x00, 0x00 },
+    { 0x5e, 0x54, 0x1b, 0x75, 0x56, 0x7c, 0x64, 0x7d, 0x69, 0xf6, 0x00, 0x00 },
+    { 0x5e, 0x54, 0x1b, 0x75, 0x56, 0x7c, 0x64, 0x7d, 0xe9, 0x76, 0x00, 0x00 },
+    { 0x5e, 0x54, 0x1b, 0x75, 0x56, 0x7c, 0x64, 0x7d, 0xe9, 0xf6, 0x00, 0x00 },
+    { 0x5e, 0x54, 0x1b, 0x75, 0x56, 0x7c, 0x64, 0xfd, 0x69, 0x76, 0x00, 0x00 },
+    { 0x5e, 0x54, 0x1b, 0x75, 0x56, 0x7c, 0x64, 0xfd, 0x69, 0xf6, 0x00, 0x00 },
+    { 0x5e, 0x54, 0x1b, 0x75, 0x56, 0x7c, 0x64, 0xfd, 0xe9, 0x76, 0x00, 0x00 },
+[...]</programlisting>
+<simpara>Les deux derniers octets doivent être déterminés par force brute, ce qui revient
+à un espace de clés correspondant à 5120 * 2^8 * 2^8 = 5120 * 2^16 possibilités.</simpara>
+<simpara>La seconde difficulté réside dans la lenteur de l&#8217;algorithme qui limite
+les possibilités d&#8217;attaque par force brute. Pour contourner cette difficulté,
+l&#8217;idéal serait de pouvoir éliminer les mauvaises clés candidates sans avoir
+à déchiffrer l&#8217;intégralité des données. S&#8217;il est possible de déterminer un clair connu
+dans le début du fichier déchiffré (autre que les 10 premiers octets), alors une
+vérification sur le début des données déchiffrées permettrait de ne retenir que les
+bons candidats. Si une clé candidate passe ce premier filtre, alors un déchiffrement
+complet est ensuite réalisé pour comparer les empreintes SHA256.</simpara>
+<simpara>Un fichier au format bzip2, de taille comparable à celui recherché, est alors
+généré pour tenter d&#8217;identifier un clair connu :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ dd if=/dev/urandom of=test.bin bs=256K count=1
+1+0 records in
+1+0 records out
+262144 bytes (262 kB) copied, 0.0222051 s, 11.8 MB/s
+$ bzip2 test.bin
+$ hexdump -C test.bin.bz2
+00000000  42 5a 68 39 31 41 59 26  53 59 48 b3 90 17 00 32  |BZh91AY&amp;SYH....2|
+00000010  78 ff ff ff ff ff ff ff  ff ff ff ff ff ff ff ff  |x...............|
+00000020  ff ff ff ff ff ff ff ff  ff ff ff ff ff ff ff ff  |................|
+[...]</programlisting>
+<simpara>On remarque que le début du fichier contient de nombreuses occurences de la valeur <literal>0xff</literal>. L&#8217;heuristique
+retenue consiste alors à tester la présence des octets <literal>ff ff ff ff</literal> dans les
+32 premiers octets déchiffrés.</simpara>
+<simpara>Une version simpliée de l&#8217;attaque par force brute est présentée ci-dessous :</simpara>
+<programlisting language="c" linenumbering="unnumbered">const char *plain_sha256 = "9128135129d2be652809f5a1d337211affad91ed5827474bf9bd7e285ecef321";
+
+void bf(const char *cipher_data, int size) {
+        char *key;
+        char *plain_data = NULL;
+        char sha256[65];
+        int i, j, k, l;
+
+        plain_data = malloc(size);
+
+        for (i = 0; i &lt; KEYS_COUNT; i++) {
+                key = keys[i];
+
+                for (j = 0; j &lt; 256; j++) {
+                        key[10] = j;
+
+                        for (k = 0; k &lt; 256; k++) {
+                                key[11] = k;
+
+                                decipher(key, cipher_data, plain_data, 32);
+                                if (!memmem(plain_data, 32, "\xFF\xFF\xFF\xFF", 4))
+                                        continue;
+
+                                decipher(key, cipher_data, plain_data, size);
+                                sha256sum(plain_data, size, sha256);
+
+                                if (!strncmp(sha256, plain_sha256, 64)) {
+                                        fprintf(stderr, "[!] key = ");
+                                        for (l = 0; l &lt; 12; l++)
+                                                fprintf(stderr, "%2.2x", key[l] &amp; 0xff);
+
+                                        goto finish;
+                                }
+                        }
+                }
+        }
+
+finish:
+        if (plain_data)
+                free(plain_data);
+}</programlisting>
+<simpara>Une version améliorée, disponible en annexe (<xref linkend="_recode_c"/>), utilise OpenMP pour
+paralléliser les calculs et permet de retrouver la clé valide en l&#8217;espace d&#8217;une minute :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ make clean &amp;&amp; make recode
+rm recode keys.h
+./find-key.rb &gt; keys.h
+gcc -O3 -march=native -fomit-frame-pointer -fopenmp -funroll-loops -Wall -o recode recode.c -lcrypto
+$ dd if=input.bin bs=1 skip=$((0x9ad)) count=$((0x3dc9a-0x9ad+1)) of=encrypted.bin
+250606+0 records in
+250606+0 records out
+250606 bytes (251 kB) copied, 0.333976 s, 750 kB/s
+$ sha256sum encrypted.bin
+a5790b4427bc13e4f4e9f524c684809ce96cd2f724e29d94dc999ec25e166a81  encrypted.bin
+$ ./recode encrypted.bin
+[+] self-test passed
+[+] starting 4 threads
+[+] testing 5120 keys
+[!] key = 5ed49b7156fce47de976dac5
+[+] result saved in congratulations.tar.bz2</programlisting>
+<simpara>La clé a finalement été identifée (<literal>5ed49b7156fce47de976dac5</literal>) et le résultat est sauvegardé dans le fichier
+<literal>congratulations.tar.bz2</literal>.</simpara>
+</section>
+</section>
 <section xml:id="_stego_stage">
-<title>Petit exercice de stéganographie</title>
-<section xml:id="_démarrage">
-<title>Démarrage</title>
+<title>Stage 6 : stéganographie</title>
+<section xml:id="_congratulations_jpg">
+<title>congratulations.jpg</title>
 <simpara>Le fichier obtenu à l&#8217;étape précédente est une archive au format <literal>.tar.bz2</literal> qui contient
 une image <literal>JPEG</literal> :</simpara>
-<programlisting language="console" linenumbering="unnumbered">$ sha256sum decrypted
-9128135129d2be652809f5a1d337211affad91ed5827474bf9bd7e285ecef321  decrypted
-$ tar jxvf decrypted
-$ congratulations.jpg
+<programlisting language="console" linenumbering="unnumbered">$ sha256sum congratulations.tar.bz2
+9128135129d2be652809f5a1d337211affad91ed5827474bf9bd7e285ecef321  congratulations.tar.bz2
+$ tar jxvf congratulations.tar.bz2
+congratulations.jpg
 $ file congratulations.jpg
 congratulations.jpg: JPEG image data, JFIF standard 1.01
 $ ls -al congratulations.jpg
 -rw-r--r-- 1 jpe jpe 252569 mars  23 10:34 congratulations.jpg</programlisting>
-</section>
-<section xml:id="_analyse_de_congratulations_jpg">
-<title>Analyse de congratulations.jpg</title>
 <simpara>Le fichier <literal>congratulations.jpg</literal> correspond à l&#8217;image ci-dessous :</simpara>
 <informalfigure>
 <mediaobject>
@@ -546,8 +1345,8 @@ $ tar jxvf out.tar.bz2
 congratulations.png</programlisting>
 <simpara>L&#8217;analyse du fichier <literal>congratulations.png</literal> constitue la seconde phase de cette étape.</simpara>
 </section>
-<section xml:id="_analyse_de_congratulations_png">
-<title>Analyse de congratulations.png</title>
+<section xml:id="_congratulations_png">
+<title>congratulations.png</title>
 <simpara>L&#8217;image obtenue est présentée ci-dessous :</simpara>
 <informalfigure>
 <mediaobject>
@@ -573,12 +1372,17 @@ ERRORS DETECTED in congratulations.png</programlisting>
 <simpara>Le fichier semble contenir un "chunk" de type <literal>sTic</literal>. Une rapide recherche sur
 Internet permet de confirmer qu&#8217;il ne s&#8217;agit pas d&#8217;un type valide.</simpara>
 <simpara>Le script Ruby ci-dessous permet de lister tous les types de "chunk" :</simpara>
+<formalpara>
+<title>list-chunks.rb</title>
+<para>
 <programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
 
 require 'chunky_png'
 
 png_stream = ChunkyPNG::Datastream.from_file(ARGV.shift)
 png_stream.each_chunk { |chunk| puts chunk.type }</programlisting>
+</para>
+</formalpara>
 <simpara>Son exécution retourne le résultat suivant :</simpara>
 <programlisting language="console" linenumbering="unnumbered">$ ./list-chunks.rb congratulations.png
 IHDR
@@ -628,8 +1432,8 @@ contenant une nouvelle image :</simpara>
 congratulations.tiff</programlisting>
 <simpara>Cette image doit alors être analysée pour poursuivre le challenge.</simpara>
 </section>
-<section xml:id="_analyse_de_congratulations_tiff">
-<title>Analyse de congratulations.tiff</title>
+<section xml:id="_congratulations_tiff">
+<title>congratulations.tiff</title>
 <simpara>L&#8217;image obtenue est la suivante :</simpara>
 <informalfigure>
 <mediaobject>
@@ -711,8 +1515,8 @@ archive <literal>bzip2</literal>, comme présenté ci-dessous :</simpara>
 <simpara>Il ne reste plus alors qu&#8217;à sauvegarder le résultat pour poursuivre le
 challenge.</simpara>
 </section>
-<section xml:id="_analyse_de_congratulations_gif">
-<title>Analyse de congratulations.gif</title>
+<section xml:id="_congratulations_gif">
+<title>congratulations.gif</title>
 <simpara>Le fichier obtenu à la phase précédente est une archive <literal>tar.bz2</literal> contenant
 une nouvelle image à analyser, <literal>congratulations.gif</literal>.</simpara>
 <programlisting language="console" linenumbering="unnumbered">$ tar jxvf step4.bz2
@@ -749,5 +1553,825 @@ l&#8217;adresse de validation qui est : <literal>1713e7c1d0b750ccd4e002bb957aa79
 <warning>
 <simpara>à rédiger</simpara>
 </warning>
+</section>
+<section xml:id="_annexes">
+<title>Annexes</title>
+<section xml:id="_stage_4">
+<title>Stage 4</title>
+<formalpara xml:id="_clean_js">
+<title>clean.js</title>
+<para>
+<programlisting language="javascript" linenumbering="numbered">var fs = require('fs');
+
+var esprima = require('esprima');
+var estraverse = require('estraverse');
+var escodegen = require('escodegen');
+
+var filename = process.argv[2];
+var ast = esprima.parse(fs.readFileSync(filename));
+
+function simplify_node(node) {
+    if ((node.type == 'BinaryExpression') &amp;&amp;
+        (node.left.type == 'Literal') &amp;&amp;
+        (node.right.type == 'Literal')) {
+        if (node.operator == '+') {
+            return {
+                type: 'Literal',
+                value: node.left.value + node.right.value,
+                raw: node.left.raw + node.right.raw
+            };
+        } else if (node.operator == '*') {
+            return {
+                type: 'Literal',
+                value: node.left.value * node.right.value,
+                raw: node.left.raw * node.right.raw
+            };
+        }
+    }
+    return node;
+}
+
+function simplify_ast(ast) {
+    var assignments = {};
+    var renaming = {};
+    var f_count = 0;
+    var scopeChain = [];
+
+    estraverse.traverse(ast, {
+        enter: function(node, parent) {
+            var scopeName;
+            if (node.type == 'FunctionDeclaration')
+                scopeName = 'function_' + node.id.name;
+
+            if (node.type == 'Program')
+                scopeName = 'program';
+
+            if (scopeName) {
+                scopeChain.push(scopeName);
+                assignments[scopeName] = {};
+                renaming[scopeName] = {};
+            }
+
+            if (node.type == 'Identifier') {
+                var currentScope = scopeChain[scopeChain.length - 1];
+                k = assignments[currentScope][node.name];
+                if (parent.type == 'AssignmentExpression') {
+                    /* Node is on the left-hand side of the assignment */
+                    if (parent.left == node) {
+                        right = parent.right;
+                        if (!k) {
+                            assignments[currentScope][node.name] = {
+                                node: right,
+                                ref_count: 1
+                            };
+                        } else {
+                            /* Not the first assignment, increasing ref count */
+                            k['ref_count']++;
+                        }
+                    }
+                } else if ((parent.type == 'UpdateExpression') &amp;&amp; k) {
+                    k['ref_count']++;
+                }
+                /*else if ((parent.type == 'FunctionDeclaration') &amp;&amp; (parent.id == node)) {
+                		    renaming[node.name] = "func_" + f_count;
+                		    f_count++;
+                		} */
+            }
+        },
+        leave: function(node, parent) {
+            if ((node.type == 'FunctionDeclaration') || (node.type == 'Program')) {
+                scopeChain.pop();
+            }
+        }
+    });
+
+    scopeChain = [];
+
+    result = estraverse.replace(ast, {
+        enter: function(node, parent) {
+            if (node.type == 'FunctionDeclaration') {
+                scopeChain.push('function_' + node.id.name);
+            }
+            if (node.type == 'Program') {
+                scopeChain.push('program');
+            }
+
+            if (node.type == 'Identifier') {
+                var currentScope = scopeChain[scopeChain.length - 1];
+                k = assignments[currentScope][node.name] || assignments['program'][node.name];
+
+                if ((parent.type == 'AssignmentExpression') &amp;&amp; (parent.left == node) ||
+                    (parent.type == 'UpdateExpression')) {
+                    return node;
+                }
+                if (k &amp;&amp; k['ref_count'] == 1) {
+                    if ((k.node.type == 'Literal') || (k.node.type == 'Identifier')) {
+                        return k.node;
+                    }
+                }
+                /*
+		if (renaming[node.name]) {
+		    node.name = renaming[node.name];
+		}
+		*/
+            }
+            return simplify_node(node);
+        },
+        leave: function(node, parent) {
+            if ((node.type == 'FunctionDeclaration') || (node.type == 'Program')) {
+                scopeChain.pop();
+            }
+        }
+    });
+
+    return result;
+}
+
+new_code = ""
+do {
+    old_code = new_code;
+    ast = simplify_ast(ast);
+    new_code = escodegen.generate(ast);
+}
+while (new_code != old_code);
+
+console.log(new_code);</programlisting>
+</para>
+</formalpara>
+</section>
+<section xml:id="_stage_5">
+<title>Stage 5</title>
+<formalpara xml:id="_t0_asm">
+<title>t0.asm</title>
+<para>
+<screen>; New subroutine 0+d; References: 0, Local Vars: 76
+00000000: 64 b4     sub_0:        ajw #-4c         ; adjust workspace - Move workspace pointer
+00000002: 40                      ldc #0           ; load constant - A = n, B=A, C=B
+00000003: d1                      stl #1 [var_1]   ; store local - workspace[n] = A, A=B, B=C
+00000004: 40                      ldc #0           ; load constant - A = n, B=A, C=B
+00000005: d3                      stl #3 [var_3]   ; store local - workspace[n] = A, A=B, B=C
+00000006: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000008: 24 20 50                ldnlp #400       ; load non-local pointer - A = &amp;A[n]
+0000000b: 23 fc                   gajw             ; general adjust workspace - Wptr &lt;=&gt; A
+
+; New subroutine d+eb; References: 0, Local Vars: 76
+0000000d: 64 b4     sub_d:        ajw #-4c         ; adjust workspace - Move workspace pointer
+0000000f: 2c 49                   ldc #c9          ; load constant - A = n, B=A, C=B
+00000011: 21 fb                   ldpi [str_dc]    ; Load pointer to instruction - A = next instruction + A
+00000013: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000015: 48                      ldc #8           ; load constant - A = n, B=A, C=B
+00000016: fb                      out              ; output message - A bytes to channel B from address C
+00000017: 24 19     loc_17:       ldlp #49 [&amp;var_73]   ; load local pointer - A = &amp;workspace[n], B=A, C=B
+00000019: 24 f2                   mint             ; minimum integer - A = MostNeg
+0000001b: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
+0000001c: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
+0000001d: f7                      in               ; input message - Read A bytes from channel B to addr C
+0000001e: 24 79                   ldl #49 [var_73]  ; load local - A = workspace[n], B=A, C=B
+00000020: 21 a5                   cj loc_37        ; conditional jump - jump if A = 0
+00000022: 2c 4d                   ldc #cd          ; load constant - A = n, B=A, C=B
+00000024: 21 fb                   ldpi [loc_f3]    ; Load pointer to instruction - A = next instruction + A
+00000026: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000028: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
+00000029: 24 79                   ldl #49 [var_73]  ; load local - A = workspace[n], B=A, C=B
+0000002b: f7                      in               ; input message - Read A bytes from channel B to addr C
+0000002c: 2c 43                   ldc #c3          ; load constant - A = n, B=A, C=B
+0000002e: 21 fb                   ldpi [loc_f3]    ; Load pointer to instruction - A = next instruction + A
+00000030: 24 7a                   ldl #4a [var_74]  ; load local - A = workspace[n], B=A, C=B
+00000032: 24 79                   ldl #49 [var_73]  ; load local - A = workspace[n], B=A, C=B
+00000034: fb                      out              ; output message - A bytes to channel B from address C
+00000035: 61 00                   j loc_17         ; jump - Unconditional relative jump
+00000037: 24 19     loc_37:       ldlp #49 [&amp;var_73]   ; load local pointer - A = &amp;workspace[n], B=A, C=B
+00000039: 24 f2                   mint             ; minimum integer - A = MostNeg
+0000003b: 51                      ldnlp #1         ; load non-local pointer - A = &amp;A[n]
+0000003c: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
+0000003d: fb                      out              ; output message - A bytes to channel B from address C
+0000003e: 24 19                   ldlp #49 [&amp;var_73]   ; load local pointer - A = &amp;workspace[n], B=A, C=B
+00000040: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000042: 52                      ldnlp #2         ; load non-local pointer - A = &amp;A[n]
+00000043: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
+00000044: fb                      out              ; output message - A bytes to channel B from address C
+00000045: 24 19                   ldlp #49 [&amp;var_73]   ; load local pointer - A = &amp;workspace[n], B=A, C=B
+00000047: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000049: 53                      ldnlp #3         ; load non-local pointer - A = &amp;A[n]
+0000004a: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
+0000004b: fb                      out              ; output message - A bytes to channel B from address C
+0000004c: 29 44                   ldc #94          ; load constant - A = n, B=A, C=B
+0000004e: 21 fb                   ldpi [str_e4]    ; Load pointer to instruction - A = next instruction + A
+00000050: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000052: 48                      ldc #8           ; load constant - A = n, B=A, C=B
+00000053: fb                      out              ; output message - A bytes to channel B from address C
+00000054: 12                      ldlp #2 [&amp;var_2]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+00000055: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000057: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
+00000058: 44                      ldc #4           ; load constant - A = n, B=A, C=B
+00000059: f7                      in               ; input message - Read A bytes from channel B to addr C
+0000005a: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+0000005b: 24 f2                   mint             ; minimum integer - A = MostNeg
+0000005d: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
+0000005e: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
+0000005f: f7                      in               ; input message - Read A bytes from channel B to addr C
+00000060: 28 48                   ldc #88          ; load constant - A = n, B=A, C=B
+00000062: 21 fb                   ldpi [str_ec]    ; Load pointer to instruction - A = next instruction + A
+00000064: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000066: 48                      ldc #8           ; load constant - A = n, B=A, C=B
+00000067: fb                      out              ; output message - A bytes to channel B from address C
+00000068: 13                      ldlp #3 [&amp;var_3]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+00000069: 24 f2                   mint             ; minimum integer - A = MostNeg
+0000006b: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
+0000006c: 41                      ldc #1           ; load constant - A = n, B=A, C=B
+0000006d: f7                      in               ; input message - Read A bytes from channel B to addr C
+0000006e: 19                      ldlp #9 [&amp;var_9]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+0000006f: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000071: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
+00000072: 13                      ldlp #3 [&amp;var_3]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+00000073: f1                      lb               ; load byte - Load byte addressed by A into A
+00000074: f7                      in               ; input message - Read A bytes from channel B to addr C
+00000075: 40                      ldc #0           ; load constant - A = n, B=A, C=B
+00000076: d4                      stl #4 [var_4]   ; store local - workspace[n] = A, A=B, B=C
+00000077: 11        loc_77:       ldlp #1 [&amp;var_1]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+00000078: 24 f2                   mint             ; minimum integer - A = MostNeg
+0000007a: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
+0000007b: 41                      ldc #1           ; load constant - A = n, B=A, C=B
+0000007c: f7                      in               ; input message - Read A bytes from channel B to addr C
+0000007d: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+0000007e: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000080: 51                      ldnlp #1         ; load non-local pointer - A = &amp;A[n]
+00000081: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
+00000082: fb                      out              ; output message - A bytes to channel B from address C
+00000083: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+00000084: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000086: 52                      ldnlp #2         ; load non-local pointer - A = &amp;A[n]
+00000087: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
+00000088: fb                      out              ; output message - A bytes to channel B from address C
+00000089: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+0000008a: 24 f2                   mint             ; minimum integer - A = MostNeg
+0000008c: 53                      ldnlp #3         ; load non-local pointer - A = &amp;A[n]
+0000008d: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
+0000008e: fb                      out              ; output message - A bytes to channel B from address C
+0000008f: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+00000090: 81                      adc #1           ; add constant - Add to A with carry check
+00000091: 24 f2                   mint             ; minimum integer - A = MostNeg
+00000093: 55                      ldnlp #5         ; load non-local pointer - A = &amp;A[n]
+00000094: 41                      ldc #1           ; load constant - A = n, B=A, C=B
+00000095: f7                      in               ; input message - Read A bytes from channel B to addr C
+00000096: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+00000097: 82                      adc #2           ; add constant - Add to A with carry check
+00000098: 24 f2                   mint             ; minimum integer - A = MostNeg
+0000009a: 56                      ldnlp #6         ; load non-local pointer - A = &amp;A[n]
+0000009b: 41                      ldc #1           ; load constant - A = n, B=A, C=B
+0000009c: f7                      in               ; input message - Read A bytes from channel B to addr C
+0000009d: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+0000009e: 83                      adc #3           ; add constant - Add to A with carry check
+0000009f: 24 f2                   mint             ; minimum integer - A = MostNeg
+000000a1: 57                      ldnlp #7         ; load non-local pointer - A = &amp;A[n]
+000000a2: 41                      ldc #1           ; load constant - A = n, B=A, C=B
+000000a3: f7                      in               ; input message - Read A bytes from channel B to addr C
+000000a4: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+000000a5: 81                      adc #1           ; add constant - Add to A with carry check
+000000a6: f1                      lb               ; load byte - Load byte addressed by A into A
+000000a7: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+000000a8: 82                      adc #2           ; add constant - Add to A with carry check
+000000a9: f1                      lb               ; load byte - Load byte addressed by A into A
+000000aa: 23 f3                   xor              ; exclusive or - A = A^B, B=C
+000000ac: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+000000ad: 83                      adc #3           ; add constant - Add to A with carry check
+000000ae: f1                      lb               ; load byte - Load byte addressed by A into A
+000000af: 23 f3                   xor              ; exclusive or - A = A^B, B=C
+000000b1: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+000000b2: 81                      adc #1           ; add constant - Add to A with carry check
+000000b3: 23 fb                   sb               ; store byte - *A = B &amp; 0xff
+000000b5: 11                      ldlp #1 [&amp;var_1]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+000000b6: f1                      lb               ; load byte - Load byte addressed by A into A
+000000b7: 74                      ldl #4 [var_4]   ; load local - A = workspace[n], B=A, C=B
+000000b8: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+000000b9: f2                      bsub             ; Byte subscript - A = A + B
+000000ba: f1                      lb               ; load byte - Load byte addressed by A into A
+000000bb: 74                      ldl #4 [var_4]   ; load local - A = workspace[n], B=A, C=B
+000000bc: 2c f1                   ssub             ; sixteen subscript - A = A + 2B
+000000be: 23 f3                   xor              ; exclusive or - A = A^B, B=C
+000000c0: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+000000c1: 23 fb                   sb               ; store byte - *A = B &amp; 0xff
+000000c3: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+000000c4: 81                      adc #1           ; add constant - Add to A with carry check
+000000c5: f1                      lb               ; load byte - Load byte addressed by A into A
+000000c6: 74                      ldl #4 [var_4]   ; load local - A = workspace[n], B=A, C=B
+000000c7: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+000000c8: f2                      bsub             ; Byte subscript - A = A + B
+000000c9: 23 fb                   sb               ; store byte - *A = B &amp; 0xff
+000000cb: 74                      ldl #4 [var_4]   ; load local - A = workspace[n], B=A, C=B
+000000cc: 81                      adc #1           ; add constant - Add to A with carry check
+000000cd: 25 fa                   dup              ; duplicate top of stack
+000000cf: d4                      stl #4 [var_4]   ; store local - workspace[n] = A, A=B, B=C
+000000d0: cc                      eqc #c           ; equals constant - A = (A == Constant)
+000000d1: a3                      cj loc_d5        ; conditional jump - jump if A = 0
+000000d2: 80                      adc #0           ; add constant - Add to A with carry check
+000000d3: 40                      ldc #0           ; load constant - A = n, B=A, C=B
+000000d4: d4                      stl #4 [var_4]   ; store local - workspace[n] = A, A=B, B=C
+000000d5: 10        loc_d5:       ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
+000000d6: 24 f2                   mint             ; minimum integer - A = MostNeg
+000000d8: 41                      ldc #1           ; load constant - A = n, B=A, C=B
+000000d9: fb                      out              ; output message - A bytes to channel B from address C
+000000da: 66 0b                   j loc_77         ; jump - Unconditional relative jump
+000000dc: **        str_dc:      .string "Boot ok"
+000000e4: **        str_e4:      .string "Code Ok"
+000000ec: **        str_ec:      .string "Decrypt"
+000000f4: 24 bc                   ajw #4c          ; adjust workspace - Move workspace pointer
+000000f6: 22 f0                   ret              ; return</screen>
+</para>
+</formalpara>
+<formalpara xml:id="_recode_c">
+<title>recode.c</title>
+<para>
+<programlisting language="c" linenumbering="numbered">#define _GNU_SOURCE
+#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;unistd.h&gt;
+#include &lt;openssl/sha.h&gt;
+#include &lt;sys/types.h&gt;
+#include &lt;sys/stat.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;string.h&gt;
+#include &lt;omp.h&gt;
+
+#include "keys.h"
+
+#define DEBUG 0
+
+#define PLAIN_TEXT_LOOKUP_SZ 32
+
+typedef struct tr_ctx {
+	uint8_t t4_st;
+	uint8_t t5_st;
+	uint16_t t6_st;
+	uint8_t t8_idx;
+	uint8_t t8_st[4][12];
+	uint8_t t10_idx;
+	uint8_t t10_st[4][12];
+	uint8_t t12_st[12];
+} tr_ctx_t;
+
+/* Tested, OK
+   l 7ff80000 transputer_4.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+   w 2 5453532a
+   w 3 322d4349
+   w 4 2a353130
+   s i 7ff80009
+   g
+   result =&gt; 0xcf
+   */
+inline uint8_t transputer_4(const uint8_t * key, tr_ctx_t * ctx) {
+	int i;
+
+	for (i = 0; i &lt; 12; i++)
+		ctx-&gt;t4_st += key[i];
+
+	return ctx-&gt;t4_st;
+}
+
+/* Tested, OK
+   l 7ff80000 transputer_5.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 2 5453532a
+   w 3 322d4349
+   w 4 2a353130
+   s i 7ff80009
+   g
+
+   result =&gt; 0x75
+   */
+inline uint8_t transputer_5(const uint8_t * key, tr_ctx_t * ctx) {
+	int i;
+
+	for (i = 0; i &lt; 12; i++)
+		ctx-&gt;t5_st ^= key[i];
+
+	return ctx-&gt;t5_st;
+}
+
+/* Tested, OK
+   l 7ff80000 transputer_6.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 4 5453532a
+   w 5 322d4349
+   w 6 2a353130
+   s i 7ff80009
+   g
+
+   result =&gt; 0x9e
+   */
+inline uint8_t transputer_6(const uint8_t * key, tr_ctx_t * ctx) {
+	uint16_t k1, k2, k3;
+
+	k1 = (ctx-&gt;t6_st &amp; 0x8000) &gt;&gt; 0xf;
+	k2 = (ctx-&gt;t6_st &amp; 0x4000) &gt;&gt; 0xe;
+
+	k2 ^= k1;
+	k3 = (ctx-&gt;t6_st &lt;&lt; 1);
+
+	ctx-&gt;t6_st = k3 ^ k2;
+
+	return ctx-&gt;t6_st &amp; 0xff;
+}
+
+inline uint8_t transputer_1(const uint8_t * key, tr_ctx_t * ctx) {
+	uint8_t a, b, c;
+
+	a = transputer_4(key, ctx);
+	b = transputer_5(key, ctx);
+	c = transputer_6(key, ctx);
+#if DEBUG
+	printf("[T1] T4 : 0x%2.2x T5 : 0x%2.2x T6 : 0x%2.2x\n", a, b, c);
+#endif
+
+	return (a ^ b) ^ c;
+}
+
+/* Tested, OK
+   l 7ff80000 transputer_7.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 4 5453532a
+   w 5 322d4349
+   w 6 2a353130
+   s i 7ff80009
+   g
+
+   result =&gt; 0xaf
+   */
+inline uint8_t transputer_7(const uint8_t * key, tr_ctx_t * ctx) {
+	uint8_t var_1, var_2;
+	int i;
+
+	var_1 = 0;
+	var_2 = 0;
+
+	for (i = 0; i &lt; 6; i++) {
+		var_1 += key[i];
+		var_2 += key[i + 6];
+	}
+
+	return var_1 ^ var_2;
+}
+
+/* Tested, OK
+   l 7ff80000 transputer_8.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 5 5453532a
+   w 6 322d4349
+   w 7 2a353130
+   s i 7ff80009
+   g
+
+   result =&gt; 0xcf
+   */
+inline uint8_t transputer_8(const uint8_t * key, tr_ctx_t * ctx) {
+	int i, j;
+	uint8_t var_3, var_1;
+
+	memcpy(ctx-&gt;t8_st[ctx-&gt;t8_idx], key, 12);
+	ctx-&gt;t8_idx = (ctx-&gt;t8_idx + 1) % 4;
+
+	var_3 = 0;
+	for (i = 0; i &lt; 4; i++) {
+		var_1 = 0;
+		for (j = 0; j &lt; 12; j++)
+			var_1 += ctx-&gt;t8_st[i][j];
+
+		var_3 = var_1 ^ var_3;
+	}
+
+	return var_3;
+}
+
+/* Tested, OK
+   l 7ff80000 transputer_9.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 2 5453532a
+   w 3 322d4349
+   w 4 2a353130
+   s i 7ff80009
+   g
+
+   result =&gt; 0x06
+   */
+inline uint8_t transputer_9(const uint8_t * key, tr_ctx_t * ctx) {
+	uint8_t var_1;
+	int i;
+
+	var_1 = 0;
+	for (i = 0; i &lt; 12; i++)
+		var_1 ^= (key[i] &lt;&lt; (i &amp; 0x7));
+
+	return var_1;
+}
+
+inline uint8_t transputer_2(const uint8_t * key, tr_ctx_t * ctx) {
+	uint8_t a, b, c;
+
+	a = transputer_7(key, ctx);
+	b = transputer_8(key, ctx);
+	c = transputer_9(key, ctx);
+#if DEBUG
+	printf("[T2] T7 : 0x%2.2x T8 : 0x%2.2x T9 : 0x%2.2x\n", a, b, c);
+#endif
+
+	return (a ^ b) ^ c;
+}
+
+/* ?
+   l 7ff80000 transputer_10.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 4 5453532a
+   w 5 322d4349
+   w 6 2a353130
+   s i 7ff80065
+   g
+
+
+*/
+inline uint8_t transputer_10(const uint8_t * key, tr_ctx_t * ctx) {
+	int i, j;
+	uint8_t var_1;
+
+	memcpy(ctx-&gt;t10_st[ctx-&gt;t10_idx], key, 12);
+	ctx-&gt;t10_idx = (ctx-&gt;t10_idx + 1) % 4;
+
+	var_1 = 0;
+	for (i = 0; i &lt; 4; i++) {
+		var_1 += ctx-&gt;t10_st[i][0];
+	}
+
+	i = var_1 &amp; 3;
+	j = (var_1 &gt;&gt; 4) % 12;
+
+	return ctx-&gt;t10_st[i][j];
+}
+
+/*
+   l 7ff80000 transputer_11.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 3 5453532a
+   w 4 322d4349
+   w 5 2a353130
+   s i 7ff80030
+   g
+   */
+inline uint8_t transputer_11(const uint8_t * key, tr_ctx_t * ctx) {
+	uint8_t var_1;
+
+	var_1 = ctx-&gt;t12_st[9] ^ (ctx-&gt;t12_st[5] ^ ctx-&gt;t12_st[1]);	/* from T12 */
+	return key[var_1 % 12];
+}
+
+inline uint8_t transputer_12(const uint8_t * key, tr_ctx_t * ctx) {
+	uint8_t var_2;
+
+	memcpy(ctx-&gt;t12_st, key, 12);
+	var_2 = key[7] ^ (key[3] ^ key[0]);	/* from T11 */
+
+	return key[var_2 % 12];
+}
+
+inline uint8_t transputer_3(const uint8_t * key, tr_ctx_t * ctx) {
+	uint8_t a, b, c;
+
+	a = transputer_10(key, ctx);
+	b = transputer_11(key, ctx);
+	c = transputer_12(key, ctx);
+#if DEBUG
+	printf("[T3] T10: 0x%2.2x T11: 0x%2.2x T12: 0x%2.2x\n", a, b, c);
+#endif
+
+	return (a ^ b) ^ c;
+}
+
+void
+transputer_0(const char *key, const char *cipher, int cipher_len, char *plain, tr_ctx_t * ctx) {
+	uint8_t current_key[12];
+	int i;
+	uint8_t t1_res, t2_res, t3_res;
+
+	memcpy(current_key, key, 12);
+
+	for (i = 0; i &lt; cipher_len; i++) {
+		t1_res = transputer_1(current_key, ctx);
+		t2_res = transputer_2(current_key, ctx);
+		t3_res = transputer_3(current_key, ctx);
+
+#if DEBUG
+		printf("[T0] T1 : 0x%2.2x T2 : 0x%2.2x T3 : 0x%2.2x\n", t1_res, t2_res, t3_res);
+#endif
+
+		plain[i] = cipher[i] ^ (2 * current_key[i % 12] + i % 12);
+
+		current_key[i % 12] = (t1_res ^ t2_res) ^ t3_res;
+	}
+}
+
+void init_ctx(tr_ctx_t * ctx, const uint8_t * key) {
+	int i;
+
+	memset(ctx, 0, sizeof(struct tr_ctx));
+
+	/* t6 init */
+	for (i = 0; i &lt; 12; i++)
+		ctx-&gt;t6_st = (ctx-&gt;t6_st + key[i]) &amp; 0xffff;
+}
+
+void decipher(const char *key, const char *cipher, char *plain, int size) {
+	tr_ctx_t ctx;
+	init_ctx(&amp;ctx, (const uint8_t *)key);
+	transputer_0(key, cipher, size, plain, &amp;ctx);
+}
+
+void sha256sum(const char *data, int len, char output[65]) {
+	int i;
+	uint8_t hash[SHA256_DIGEST_LENGTH];
+	SHA256_CTX sha256;
+	SHA256_Init(&amp;sha256);
+	SHA256_Update(&amp;sha256, data, len);
+	SHA256_Final(hash, &amp;sha256);
+
+	for (i = 0; i &lt; SHA256_DIGEST_LENGTH; i++) {
+		sprintf(output + (i * 2), "%02x", hash[i]);
+	}
+	output[64] = 0;
+}
+
+const char *cipher_sha256 = "a5790b4427bc13e4f4e9f524c684809ce96cd2f724e29d94dc999ec25e166a81";
+const char *plain_sha256 = "9128135129d2be652809f5a1d337211affad91ed5827474bf9bd7e285ecef321";
+
+void bf(const char *path) {
+	int fd, ret, hcount = 0;
+	struct stat st;
+	off_t size;
+	char *cipher_bf = NULL;
+	char sha256[65];
+	int i;
+	int keyfound;
+	uint8_t hchars[4] = { '-', '\\', '|', '/' };
+
+	fd = open(path, O_RDONLY);
+	if (fd == -1) {
+		perror("open failed");
+		exit(EXIT_FAILURE);
+	}
+	ret = fstat(fd, &amp;st);
+	if (ret == -1) {
+		perror("fstat");
+		exit(EXIT_FAILURE);
+	}
+	size = st.st_size;
+
+	cipher_bf = malloc(size);
+	if (!cipher_bf) {
+		perror("malloc cipher");
+		goto finish;
+	}
+
+	ret = read(fd, cipher_bf, size);
+	if (ret != size) {
+		printf("error during read\n");
+		goto finish;
+	}
+	close(fd);
+
+	sha256sum(cipher_bf, size, sha256);
+	if (strcmp(sha256, cipher_sha256) != 0) {
+		printf("wrong sha256: %s\n", sha256);
+		goto finish;
+	}
+#pragma omp parallel
+	{
+#pragma omp barrier
+		if (omp_get_thread_num() == 0)
+			fprintf(stderr, "[+] starting %d threads\n", omp_get_num_threads());
+	}
+
+	keyfound = 0;
+	printf("[+] testing %d keys\n", KEYS_COUNT);
+#pragma omp parallel
+	for (i = 0; i &lt; KEYS_COUNT; i++) {
+		char *key;
+		int j, k, l, out_fd, thread_id;
+		char *plain_bf = NULL;
+		char plain_text_lookup[PLAIN_TEXT_LOOKUP_SZ];
+		char sha256[65];
+
+		if (keyfound == 1) {
+			i = KEYS_COUNT;
+			continue;
+		}
+		key = keys[i];
+
+		thread_id = omp_get_thread_num();
+		if (thread_id == 0) {
+			fprintf(stderr, "\r[%c] key = ", hchars[hcount++ % 4]);
+			for (l = 0; l &lt; 10; l++)
+				fprintf(stderr, "%2.2x", key[l] &amp; 0xff);
+			fprintf(stderr, "????");
+			fflush(stderr);
+		}
+
+		for (j = 0; j &lt; 256; j++) {
+			key[10] = j;
+
+			for (k = 0; k &lt; 256; k++) {
+				key[11] = k;
+
+				decipher(key, cipher_bf, plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ);
+
+				if (!memmem(plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ,
+							"\xFF\xFF\xFF\xFF", 4))
+					continue;
+
+				if (!plain_bf)
+					plain_bf = malloc(size);
+
+				decipher(key, cipher_bf, plain_bf, size);
+				sha256sum(plain_bf, size, sha256);
+
+				if (!strncmp(sha256, plain_sha256, 64))
+#pragma omp critical
+				{
+					keyfound = 1;
+					fprintf(stderr, "\r[!] key = ");
+					for (l = 0; l &lt; 12; l++)
+						fprintf(stderr, "%2.2x", key[l] &amp; 0xff);
+
+					fprintf(stderr, "\n[+] result saved in congratulations.tar.bz2\n");
+					out_fd = open("congratulations.tar.bz2", O_WRONLY | O_CREAT,
+							S_IRUSR | S_IWUSR);
+					ret = write(out_fd, plain_bf, size);
+					if (ret != size)
+						perror("write:");
+					close(out_fd);
+				}
+			}
+		}
+	}
+
+ finish:
+	if (cipher_bf)
+		free(cipher_bf);
+}
+
+int self_test(int count) {
+	int ret = 0, i;
+	char *test_key = "*SSTIC-2015*";
+	char *test_data = "\x1d\x87\xc4\xc4\xe0\xee\x40\x38\x3c\x59\x44\x7f\x23\x79\x8d\x9f\xef\xe7\x4f\xb8\x24\x80\x76\x6e";
+	char test_plain[24];
+	int test_data_size = 24;
+
+	for (i = 0; i &lt; count &amp;&amp; ret == 0; i++) {
+		decipher(test_key, test_data, test_plain, test_data_size);
+		ret = strncmp("I love ST20 architecture", test_plain, test_data_size);
+	}
+
+	return ret;
+}
+
+int main(int argc, char **argv) {
+	if (self_test(2) != 0) {
+		fprintf(stderr, "self-test failed\n");
+		exit(EXIT_FAILURE);
+	}
+	printf("[+] self-test passed\n");
+
+	if (argc != 2) {
+		printf("usage: %s encrypted.bin\n", argv[0]);
+		exit(EXIT_FAILURE);
+	}
+	bf(argv[1]);
+
+	return EXIT_SUCCESS;
+}</programlisting>
+</para>
+</formalpara>
+</section>
 </section>
 </article>
