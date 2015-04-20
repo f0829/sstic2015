@@ -7,3 +7,9 @@ avconv -i demo.mp4 -c:v libvpx-vp9 -crf 10 -c:a null output.webm
 	<source src="movie.mp4" type='video/mp4; codecs="avc1.4D401E, mp4a.40.2"'>
 	<p>This is fallback content to display for user agents that do not support the video tag.</p>
 </video>
+
+ajouter un lexer custom :
+
+0) GEM_PATH = $(bundle show pygments.rb)
+1) copier le fichier (ex: st20dis.py) dans $GEM_PATH/vendor/custom_lexers
+2) cd $GEM_PATH ; rake vendor:load_lexers ; ruby cache-lexers.rb
