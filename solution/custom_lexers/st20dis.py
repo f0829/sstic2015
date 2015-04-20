@@ -24,7 +24,7 @@ class ST20DisLexer(RegexLexer):
                 (r'\[(loc|str)_[0-9a-f]+\]', Name.Constant)
                 ],
             'keyword': [
-                (r'(ajw|ldc|stl|mint|ldnlp|gajw|ldpi|out|ldlp|in|ldl|cj|j|lb|adc|xor|sb|ssub|wsub|eqc|ret|call|gcall|bsub|dup'
+                (r'(ajw|ldc|stl|mint|ldnlp|gajw|ldpi|out|ldlp|in|ldl|cj|j|lb|adc|xor|sb|ssub|wsub|eqc|ret|call|gcall|bsub|dup|nop'
                     r')\b', Keyword)
                 ]
             }
