@@ -1,0 +1,117 @@
+/* Tested, OK
+   l 7ff80000 transputer_4.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+   w 2 5453532a
+   w 3 322d4349
+   w 4 2a353130
+   s i 7ff80009
+   g
+   result => 0xcf
+   */
+
+  /* Tested, OK
+   l 7ff80000 transputer_5.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 2 5453532a
+   w 3 322d4349
+   w 4 2a353130
+   s i 7ff80009
+   g
+
+   result => 0x75
+   */
+
+/* Tested, OK
+   l 7ff80000 transputer_6.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 4 5453532a
+   w 5 322d4349
+   w 6 2a353130
+   s i 7ff80009
+   g
+
+   result => 0x9e
+   */
+
+   /* Tested, OK
+   l 7ff80000 transputer_7.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 4 5453532a
+   w 5 322d4349
+   w 6 2a353130
+   s i 7ff80009
+   g
+
+   result => 0xaf
+   */
+
+/* Tested, OK
+   l 7ff80000 transputer_8.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 5 5453532a
+   w 6 322d4349
+   w 7 2a353130
+   s i 7ff80009
+   g
+
+   result => 0xcf
+   */
+
+
+/* Tested, OK
+   l 7ff80000 transputer_9.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 2 5453532a
+   w 3 322d4349
+   w 4 2a353130
+   s i 7ff80009
+   g
+
+   result => 0x06
+   */
+
+/* ?
+   l 7ff80000 transputer_10.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 4 5453532a
+   w 5 322d4349
+   w 6 2a353130
+   s i 7ff80065
+   g
+
+
+*/
+
+/*
+   l 7ff80000 transputer_11.bin
+   i 7ff8000c
+   s i 7ff80003
+   g
+
+   w 3 5453532a
+   w 4 322d4349
+   w 5 2a353130
+   s i 7ff80030
+   g
+
+   */
