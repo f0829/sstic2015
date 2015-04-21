@@ -13,3 +13,5 @@ ajouter un lexer custom :
 0) GEM_PATH = $(bundle show pygments.rb)
 1) copier le fichier (ex: st20dis.py) dans $GEM_PATH/vendor/custom_lexers
 2) cd $GEM_PATH ; rake vendor:load_lexers ; ruby cache-lexers.rb
+
+./fopub main.xml -param page.margin.inner 0.2in -param page.margin.outer 0.2in -param paper.type A4 -param body.font.master 9

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?asciidoc-toc maxdepth="2"?>
+<?asciidoc-toc maxdepth="3"?>
 <?asciidoc-numbered?>
+<!DOCTYPE article [<!ENTITY % db5ent PUBLIC "-//FOPUB//ENTITIES Entities for DocBook 5" "db5.ent"> %db5ent;]>
 <article xmlns="http://docbook.org/ns/docbook" xmlns:xlink="http://www.w3.org/1999/xlink" version="5.0" xml:lang="en">
 <info>
 <title>Challenge SSTIC 2015 </title>
 <subtitle>éléments de solution</subtitle>
-<date>2015-04-13</date>
+<date>2015-04-21</date>
 <author>
 <personname>
 <firstname>Julien</firstname>
@@ -17,13 +18,42 @@
 <revhistory>
 <revision>
 <revnumber>1.0</revnumber>
-<date>2015-04-13</date>
+<date>2015-04-21</date>
 <authorinitials>JP</authorinitials>
 </revision>
 </revhistory>
 </info>
 <simpara>Ce document présente la méthodologie suivie pour résoudre l&#8217;édition
-2015 du challenge SSTIC.</simpara>
+2015 du challenge SSTIC. La validation du challenge nécessite de retrouver une
+adresse email au sein du fichier téléchargé depuis le site Internet du
+symposium.</simpara>
+<simpara>Six étapes doivent être séquentiellement suivies pour obtenir l&#8217;adresse email
+recherchée, à savoir :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>l&#8217;étude d&#8217;une image de carte SD contenant une charge utile pour Rubber Ducky ;</simpara>
+</listitem>
+<listitem>
+<simpara>l&#8217;identification d&#8217;une clé de déchiffrement dans une carte du jeu Quake 3 ;</simpara>
+</listitem>
+<listitem>
+<simpara>la reconstitution d&#8217;une image depuis les déplacements et clics d&#8217;une souris
+extraits d&#8217;une capture USB ;</simpara>
+</listitem>
+<listitem>
+<simpara>l&#8217;analyse d&#8217;un code JavaScript obfusqué pour identifier une routine de
+déchiffrement et obtenir la clé valide avec une attaque par force brute ;</simpara>
+</listitem>
+<listitem>
+<simpara>la rétro-conception d&#8217;une routine de déchiffrement implémentée sur un
+processeur ST20 permettant de constater une faiblesse dans l&#8217;algorithme
+qui peut alors être exploitée pour obtenir la clé attendue ;</simpara>
+</listitem>
+<listitem>
+<simpara>enfin, l&#8217;analyse de quatre images imbriquées, l&#8217;adresse de validation étant
+affichée sur la dernière image.</simpara>
+</listitem>
+</itemizedlist>
 <section xml:id="_rubberducky">
 <title>Stage 1 : carte mémoire</title>
 <simpara>Le fichier <link xlink:href="http://static.sstic.org/challenge2015/challenge.zip">challenge.zip</link>
@@ -1030,11 +1060,42 @@ pour le processeur ST20 est disponible sur Internet : <link xlink:href="http://d
 <link xlink:href="http://pdf.datasheetcatalog.com/datasheet/SGSThomsonMicroelectronics/mXruvtu.pdf">manuel</link> sur
 le jeu d&#8217;instruction du processeur aide à interpréter la sortie du désassembleur.</simpara>
 </section>
+<section xml:id="_présentation_de_l_architecture">
+<title>Présentation de l&#8217;architecture</title>
+<simpara>Pour faciliter la compréhension de la suite de ce document, il est nécessaire de présenter quelques spécificités
+de l&#8217;architecture du processeur ST20.</simpara>
+<simpara>Tout d&#8217;abord, il s&#8217;agit d&#8217;un processeur 32 bits qui utilise une représentation little-endian des données en mémoire. Ainsi, <literal>0xcafebabe</literal> sera
+représenté en mémoire par <literal>BE BA FE CA</literal>.</simpara>
+<simpara>Les registres disponibles sur ST20 sont :</simpara>
+<itemizedlist>
+<listitem>
+<simpara><literal>Wptr</literal> : pointe vers une zone mémoire où sont stockée les données locales (peut être assimilé à un pointeur de pile) ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>IptrReg</literal> : pointe sur la prochaine instruction à exécuter ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>StatusReg</literal> : registre de status ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>Areg</literal>, <literal>Breg</literal> et <literal>Creg</literal> : forme une pile d&#8217;évaluation.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Le registre <literal>Wptr</literal> contient l&#8217;adresse pour accéder aux variables locales d&#8217;une fonction. La valeur
+du registre est décrémentée à l&#8217;entrée d&#8217;une fonction pour réserver l&#8217;espace nécessaire. L&#8217;accès aux variables
+se fait alors via le registre <literal>Wptr</literal> qui se comporte comme un tableau de mots (32 bits) : l&#8217;adresse de la variable
+<literal>var_3</literal> est égale à <literal>Wptr + 4 * 3</literal>.</simpara>
+<simpara>Enfin, les registres <literal>Areg</literal>, <literal>Breg</literal> et <literal>Creg</literal> sont la source et la destination pour la plupart
+des opérations arithmétiques ou logiques. Lorsqu&#8217;une valeur est chargée, alors <literal>Breg</literal> est poussé
+dans <literal>Creg</literal>, <literal>Areg</literal> est poussé dans <literal>Breg</literal> et la valeur chargée est stockée dans <literal>Areg</literal>. A l&#8217;inverse, lorsqu&#8217;une
+valeur est stockée depuis <literal>Areg</literal>, <literal>Areg</literal> prend la valeur de <literal>Breg</literal>, <literal>Breg</literal> celle de <literal>Creg</literal> et <literal>Creg</literal>
+devient indéfini.</simpara>
+</section>
 <section xml:id="_rétro_conception">
 <title>Rétro-conception</title>
 <simpara>Pour commencer, le premier réflexe est alors de lancer <literal>st20dis</literal> sur le fichier <literal>input.bin</literal> en commençant
 à désassembler à l&#8217;octet 0 :</simpara>
-<programlisting language="console" linenumbering="unnumbered">$ ./st20dis-linux -A input.bin
+<programlisting language="console" linenumbering="unnumbered">$ st20dis-linux -A input.bin
 ; New subroutine 0+1; References: 0, Local Vars: 0
 00000000: f8                    sub_0:        prod             ; product - A = A * B (no overflow check)
 
@@ -1064,9 +1125,9 @@ la quantité de données qui sera placée dans la mémoire du processeur pour ê
 executée.</simpara>
 <simpara>Le code du démarrage du premier transputer est alors extrait avec les commandes
  ci-dessous :</simpara>
-<programlisting language="console" linenumbering="unnumbered">$ dd if=input/input.bin count=1 bs=1 | xxd -
+<programlisting language="console" linenumbering="unnumbered">$ dd if=input.bin count=1 bs=1 | xxd -
 0000000: f8 <co xml:id="CO4-1"/>
-$ dd if=input/input.bin bs=1 skip=1 count=$((0xf8)) of=t0.bin</programlisting>
+$ dd if=input.bin bs=1 skip=1 count=$((0xf8)) of=t0.bin</programlisting>
 <calloutlist>
 <callout arearefs="CO4-1">
 <para>valeur du control byte</para>
@@ -1074,19 +1135,1690 @@ $ dd if=input/input.bin bs=1 skip=1 count=$((0xf8)) of=t0.bin</programlisting>
 </calloutlist>
 <simpara>Le désassembleur <literal>st20dis</literal> est alors appelé sur le fichier <literal>t0.bin</literal> résultat
 pour enfin obtenir le fichier <xref linkend="_t0_asm"/>.</simpara>
-</section>
-<section xml:id="_détermination_de_la_clé">
-<title>Détermination de la clé</title>
-<simpara>Maintenant que l&#8217;algorithme de la routine déchiffrement est globalement compris,
-il reste à déterminer la clé valide permettant de déchiffrer les données
-embarquées dans le fichier <literal>input.bin</literal>. La démarche initiale est la suivante :</simpara>
+<section xml:id="_transputer_0">
+<title>Transputer 0</title>
+<simpara>Le transputer 0 s&#8217;initialise avec les instructions ci-dessous qui ne servent
+qu&#8217;à positionner le pointeur de pile :</simpara>
+<programlisting language="st20" linenumbering="unnumbered">; New subroutine 0+d; References: 0, Local Vars: 76
+00000000: 64 b4     sub_0:        ajw #-4c       ; réserve 76 variables locales
+00000002: 40                      ldc #0
+00000003: d1                      stl #1 [var_1] ; var_1 = 0
+00000004: 40                      ldc #0
+00000005: d3                      stl #3 [var_3] ; var_3 = 0
+00000006: 24 f2                   mint           ; A = MostNeg (0x80000000)
+00000008: 24 20 50                ldnlp #400     ; A = MostNeg @ 0x400
+0000000b: 23 fc                   gajw           ; Wptr = MostNeg @ 0x400</programlisting>
+<simpara>L&#8217;exécution continue avec les instructions ci-dessous :</simpara>
+<programlisting language="st20" linenumbering="unnumbered">; New subroutine d+eb; References: 0, Local Vars: 76
+0000000d: 64 b4     sub_d:        ajw #-4c           ; réserve 76 variables locales (word)
+0000000f: 2c 49                   ldc #c9
+00000011: 21 fb                   ldpi [str_dc]
+00000013: 24 f2                   mint
+00000015: 48                      ldc #8
+00000016: fb                      out               ; out(8, 0x80000000, "Boot ok")
+00000017: 24 19     loc_17:       ldlp #49 [&amp;var_73]
+00000019: 24 f2                   mint              ; A = 0x80000000
+0000001b: 54                      ldnlp #4          ; A = 0x80000000 + 4 * 4 = 0x80000010
+0000001c: 4c                      ldc #c
+0000001d: f7                      in                ; in(12, 0x80000010, &amp;var_73)
+0000001e: 24 79                   ldl #49 [var_73]
+00000020: 21 a5                   cj loc_37         ; saute à loc_37 si var_73 == 0
+00000022: 2c 4d                   ldc #cd
+00000024: 21 fb                   ldpi [loc_f3]
+00000026: 24 f2                   mint
+00000028: 54                      ldnlp #4
+00000029: 24 79                   ldl #49 [var_73]
+0000002b: f7                      in                ; in(var_73, 0x80000010, loc_f3)
+0000002c: 2c 43                   ldc #c3
+0000002e: 21 fb                   ldpi [loc_f3]
+00000030: 24 7a                   ldl #4a [var_74]
+00000032: 24 79                   ldl #49 [var_73]
+00000034: fb                      out               ; out(var_73, var_74, loc_f3)
+00000035: 61 00                   j loc_17</programlisting>
+<simpara>Ce code fait appel à deux instructions d&#8217;entrée/sortie <literal>in</literal> et <literal>out</literal> qui ont
+pour paramètres :</simpara>
+<informaltable frame="all" rowsep="1" colsep="1">
+<tgroup cols="4">
+<colspec colname="col_1" colwidth="25*"/>
+<colspec colname="col_2" colwidth="25*"/>
+<colspec colname="col_3" colwidth="25*"/>
+<colspec colname="col_4" colwidth="25*"/>
+<thead>
+<row>
+<entry align="left" valign="top">Instruction</entry>
+<entry align="left" valign="top">Arg0</entry>
+<entry align="left" valign="top">Arg1</entry>
+<entry align="left" valign="top">Arg2</entry>
+</row>
+</thead>
+<tbody>
+<row>
+<entry align="left" valign="top"><simpara><literal>in</literal></simpara></entry>
+<entry align="left" valign="top"><simpara>Longueur</simpara></entry>
+<entry align="left" valign="top"><simpara>Pointeur vers un channel</simpara></entry>
+<entry align="left" valign="top"><simpara>Adresse destination</simpara></entry>
+</row>
+<row>
+<entry align="left" valign="top"><simpara><literal>out</literal></simpara></entry>
+<entry align="left" valign="top"><simpara>Longueur</simpara></entry>
+<entry align="left" valign="top"><simpara>Pointeur vers un channel</simpara></entry>
+<entry align="left" valign="top"><simpara> Adresse source</simpara></entry>
+</row>
+</tbody>
+</tgroup>
+</informaltable>
+<simpara>On peut alors résumer ce code ainsi :</simpara>
 <itemizedlist>
 <listitem>
-<simpara>recoder une implémentation, si possible rapide, de la routine de déchiffrement ;</simpara>
+<simpara>envoi de <literal>"Boot ok"</literal> sur le channel <literal>0x80000000</literal> ;</simpara>
 </listitem>
 <listitem>
-<simpara>vérifier que l&#8217;implémentation passe le vecteur de test ;</simpara>
+<simpara>lecture de 12 octets (3 mots) du channel <literal>0x80000010</literal> vers l&#8217;adresse <literal>&amp;var_73</literal> (les variables
+<literal>var_73</literal>, <literal>var_74</literal> et <literal>var_75</literal> sont mises à jour) ;</simpara>
 </listitem>
+<listitem>
+<simpara>si <literal>var_73 == 0</literal>, sortie de la boucle ;</simpara>
+</listitem>
+<listitem>
+<simpara>sinon lecture de <literal>var_73</literal> octets depuis le channel <literal>0x80000010</literal> vers l&#8217;adresse <literal>loc_f3</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara>écriture de <literal>var_73</literal> octets depuis l&#8217;adresse <literal>loc_f3</literal> vers le channel référencé
+par <literal>var_74</literal>.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>La documentation précise le rôle des channels <literal>0x80000000</literal> et <literal>0x80000010</literal> :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_st20_memmap.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk st20 memmap</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Les channels <literal>0x80000000</literal> et <literal>0x80000010</literal> sont donc respectivement
+la sortie et l&#8217;entrée du lien 0, qui n&#8217;est autre que le lien de démarrage qui permet
+de lire le contenu du fichier <literal>input.bin</literal>.</simpara>
+<note>
+<simpara>Dans le reste de ce document, un channel sera désigné par son index relatif
+à <literal>0x80000000</literal>. Par exemple, le channel 4 correspond à l&#8217;adresse <literal>0x80000010</literal>.</simpara>
+</note>
+<simpara>Pour comprendre la nature des données stockées à l&#8217;adresse <literal>&amp;var_73</literal>, on peut alors
+simuler une lecture de 3 mots sur le channel 4 avec la commande <literal>dd</literal> :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ dd if=input.bin bs=1 skip=$((1+0xf8)) count=12 | xxd -
+0000000: 7100 0000 0400 0080 0000 0000</programlisting>
+<simpara>Le résultat de la lecture (instruction <literal>in</literal> à l&#8217;adresse <literal>0x1d</literal>) est donc :</simpara>
+<itemizedlist>
+<listitem>
+<simpara><literal>var_73</literal> : <literal>0x71</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>var_74</literal> : <literal>0x80000004</literal> (channel 1) ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>var_75</literal> : <literal>0</literal>.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Par la suite, <literal>0x71</literal> octets vont être lus sur le channel 4 puis envoyés sur le channel
+1. L&#8217;opération peut alors être répétée plusieurs fois, jusqu&#8217;à obtenir une longueur
+(<literal>var_73</literal>) égale à 0 :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ dd if=input.bin bs=1 skip=$((1+0xf8+12+0x71)) count=12 | xxd -
+0000000: 7100 0000 0800 0080 0000 0000
+$ dd if=input.bin bs=1 skip=$((1+0xf8+12+0x71+12+0x71)) count=12 | xxd -
+0000000: 7100 0000 0c00 0080 0000 0000
+[...]</programlisting>
+<simpara>Ces opérations peuvent être automatisées par le script Ruby ci-dessous :</simpara>
+<formalpara xml:id="_split_rb">
+<title>split.rb</title>
+<para>
+<programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
+
+def read_byte
+  b = $data[$offset]
+  $offset += 1
+  return b
+end
+
+def read_word
+  word = $data[$offset, 4]
+  word = word.pack('C*').unpack('L').first
+  $offset += 4
+  return word
+end
+
+def read_bytes(n)
+  bytes = $data[$offset, n]
+  $offset += n
+  return bytes
+end
+
+def read_msg
+  [ read_word, read_word, read_word ]
+end
+
+input = ARGV.shift
+ext = File.extname(input)
+fname = File.basename(input, ext)
+
+$data = File.open(input, "rb").read.unpack('C*')
+$offset = 0
+
+control_byte = read_byte
+puts "[+] control byte: 0x%02x" % control_byte
+
+code = read_bytes(control_byte).pack('C*')
+File.open("#{fname}_code.bin", "wb") { |f| f.write code }
+puts "[+] code written to #{fname}_code.bin"
+
+channels_data = Hash.new {|h, k| h[k] = ""}
+loop do
+  len, channel, var_75 = read_msg
+  if len == 0
+    puts "[+] len: 0x%02x, channel: 0x%02x, var_75: 0x%02x" % [ len, channel, var_75 ]
+    break
+  end
+  channel_idx = (channel &amp; 0xff) / 4
+  puts "[+] 0x%02x bytes =&gt; channel #{channel_idx}" % len
+  channels_data[channel_idx] &lt;&lt; read_bytes(len).pack('C*')
+end
+
+channels_data.each do |idx, s|
+  File.open("#{fname}_channel_#{idx}.bin", "wb") { |f| f.write s}
+  puts "[+] wrote 0x%02x bytes to #{fname}_channel_#{idx}.bin" % s.size
+end
+
+remaining = $data[$offset..-1].pack('C*')
+File.open("#{fname}_remaining.bin", "wb") { |f| f.write remaining }
+puts "[+] wrote 0x%02x bytes to #{fname}_remaining.bin" % remaining.size</programlisting>
+</para>
+</formalpara>
+<simpara>On obtient alors le résultat suivant :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ ./split.rb input.bin
+[+] control byte: 0xf8
+[+] code written to input_code.bin
+[+] 0x71 bytes =&gt; channel 1
+[+] 0x71 bytes =&gt; channel 2
+[+] 0x71 bytes =&gt; channel 3
+[+] 0x31 bytes =&gt; channel 1
+[+] 0x31 bytes =&gt; channel 1
+[+] 0x31 bytes =&gt; channel 1
+[+] 0x31 bytes =&gt; channel 2
+[+] 0x31 bytes =&gt; channel 2
+[+] 0x31 bytes =&gt; channel 2
+[+] 0x31 bytes =&gt; channel 3
+[+] 0x31 bytes =&gt; channel 3
+[+] 0x31 bytes =&gt; channel 3
+[+] 0x5c bytes =&gt; channel 1
+[+] 0x5c bytes =&gt; channel 1
+[+] 0x98 bytes =&gt; channel 1
+[+] 0x70 bytes =&gt; channel 2
+[+] 0xa8 bytes =&gt; channel 2
+[+] 0x60 bytes =&gt; channel 2
+[+] 0xa4 bytes =&gt; channel 3
+[+] 0x7c bytes =&gt; channel 3
+[+] 0x90 bytes =&gt; channel 3
+[+] len: 0x00, channel: 0x00, var_75: 0x00
+[+] wrote 0x254 bytes to input_channel_1.bin
+[+] wrote 0x27c bytes to input_channel_2.bin
+[+] wrote 0x2b4 bytes to input_channel_3.bin
+[+] wrote 0x3d316 bytes to input_remaining.bin</programlisting>
+<simpara>Les données enregistrées dans <literal>input_channel_1.bin</literal>, <literal>input_channel_2.bin</literal> et
+<literal>input_channel_3.bin</literal> seront analysées dans la suite de ce document :
+d&#8217;après le schéma fourni, on peut supposer qu&#8217;il s&#8217;agit des données envoyées
+respectivement aux transputers 1, 2 et 3.</simpara>
+<simpara>On s&#8217;intéresse à ce stade aux données contenues dans le fichier <literal>input_remaining.bin</literal>,
+c&#8217;est-à-dire les données présentes sur le lien 0 à la sortie de la boucle :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ hexdump -C input_remaining.bin|head -n 4
+00000000  4b 45 59 3a ff ff ff ff  ff ff ff ff ff ff ff ff  |KEY:............|
+00000010  17 63 6f 6e 67 72 61 74  75 6c 61 74 69 6f 6e 73  |.congratulations|
+00000020  2e 74 61 72 2e 62 7a 32  fe f3 50 dc 81 bc 97 27  |.tar.bz2..P....'|
+00000030  89 ac 72 28 cb 50 a4 09  d3 18 17 fc c3 9a 61 a0  |..r(.P........a.|
+[...]</programlisting>
+<simpara>Plusieurs valeurs intéressantes peuvent être distinguées :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>la chaîne de caractères <literal>KEY:</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara>une série de 12 octets valant <literal>0xff</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara>la valeur <literal>0x17 = 23</literal> sur un octet ;</simpara>
+</listitem>
+<listitem>
+<simpara>la chaîne de caractères <literal>congratulations.tar.bz2</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara>enfin, au décalage <literal>4 + 12 + 1 + 23 = 40</literal>, des données semblant aléatoires, jusqu&#8217;à la fin du fichier.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>On peut remarquer que la longueur de la chaîne <literal>congratulations.tar.bz2</literal> veut 23 octets.</simpara>
+<simpara>L&#8217;analyse du code assembleur se poursuit alors à l&#8217;adresse <literal>loc_37</literal>, après la sortie de la boucle :</simpara>
+<programlisting language="st20" linenumbering="unnumbered">00000037: 24 19     loc_37:       ldlp #49 [&amp;var_73]
+00000039: 24 f2                   mint
+0000003b: 51                      ldnlp #1
+0000003c: 4c                      ldc #c
+0000003d: fb                      out               ; out(12, MostNeg @ 1, &amp;var_73)
+0000003e: 24 19                   ldlp #49 [&amp;var_73]
+00000040: 24 f2                   mint
+00000042: 52                      ldnlp #2
+00000043: 4c                      ldc #c
+00000044: fb                      out                ; out(12, MostNeg @ 2, &amp;var_73)
+00000045: 24 19                   ldlp #49 [&amp;var_73]
+00000047: 24 f2                   mint
+00000049: 53                      ldnlp #3
+0000004a: 4c                      ldc #c
+0000004b: fb                      out                ; out(12, MostNeg @ 3, &amp;var_73)
+0000004c: 29 44                   ldc #94
+0000004e: 21 fb                   ldpi [str_e4]
+00000050: 24 f2                   mint
+00000052: 48                      ldc #8
+00000053: fb                      out                ; out(8, MostNeg, "Code Ok")</programlisting>
+<simpara>Ces instructions se contentent d&#8217;écrire le contenu des variables <literal>var_73</literal>, <literal>var_74</literal> et <literal>var_75</literal>
+sur les channels 1, 2, et 3. A la sortie de la première boucle, ces trois
+variables valent 0 d&#8217;après la sortie du script <literal>split.rb</literal>. Les fichiers <literal>input_channel_1.bin</literal>, <literal>input_channel_2.bin</literal> et
+<literal>input_channel_3.bin</literal> sont mis à jour en conséquence :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ dd if=/dev/zero bs=1 count=12 of=input_channel_1.bin seek=$((0x254))
+$ dd if=/dev/zero bs=1 count=12 of=input_channel_2.bin seek=$((0x27c))
+$ dd if=/dev/zero bs=1 count=12 of=input_channel_3.bin seek=$((0x2b4))</programlisting>
+<simpara>Le message <literal>Code Ok</literal> est ensuite envoyé sur le channel 0 et l&#8217;exécution continue à l&#8217;adresse <literal>loc_54</literal> :</simpara>
+<programlisting language="st20" linenumbering="unnumbered">00000054: 12                      ldlp #2 [&amp;var_2]
+00000055: 24 f2                   mint
+00000057: 54                      ldnlp #4
+00000058: 44                      ldc #4
+00000059: f7                      in                 ; in(4, MostNeg @ 4, &amp;var_2)
+0000005a: 15                      ldlp #5 [&amp;var_5]
+0000005b: 24 f2                   mint
+0000005d: 54                      ldnlp #4
+0000005e: 4c                      ldc #c
+0000005f: f7                      in                 ; in(12, MostNeg @ 4, &amp;var_5)
+00000060: 28 48                   ldc #88
+00000062: 21 fb                   ldpi [str_ec]
+00000064: 24 f2                   mint
+00000066: 48                      ldc #8
+00000067: fb                      out                ; out(8, MostNeg, "Decrypt")
+00000068: 13                      ldlp #3 [&amp;var_3]
+00000069: 24 f2                   mint
+0000006b: 54                      ldnlp #4
+0000006c: 41                      ldc #1
+0000006d: f7                      in                 ; in(1, MostNeg @ 4, &amp;var_3)
+0000006e: 19                      ldlp #9 [&amp;var_9]
+0000006f: 24 f2                   mint
+00000071: 54                      ldnlp #4
+00000072: 13                      ldlp #3 [&amp;var_3]
+00000073: f1                      lb
+00000074: f7                      in                ; in(*var3, MostNeg @ 4, &amp;var_9)</programlisting>
+<simpara>Il est intéressant de mettre en relation ces instructions avec les données du fichier
+<literal>remaining.bin</literal> précédemment analysées :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>la lecture de 4 octets sur le channel 4 permet de stocker la chaîne <literal>KEY:</literal> dans <literal>var_2</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara>la lecture de 12 octets sur le channel 4 stocke les 12 octets valant <literal>0xFF</literal> dans <literal>var_5</literal>, <literal>var_6</literal> et <literal>var_7</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara>un octet est lu sur le channel 4, qui vaut 23 (longueur de <literal>congratulations.tar.bz2</literal>) ;</simpara>
+</listitem>
+<listitem>
+<simpara>23 octets sont donc lus sur le channel, ce qui permet de stocker <literal>congratulations.tar.bz2</literal>
+à l&#8217;adresse de <literal>var_9</literal>.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>De plus, la chaîne <literal>Decrypt</literal> est envoyée sur le channel 0, ce qui laisse supposer que les instructions
+à venir implémentent une routine de déchiffrement.</simpara>
+<simpara>Le transputer 0 poursuit son exécution avec les instructions ci-dessous :</simpara>
+<programlisting language="st20" linenumbering="unnumbered">00000075: 40                      ldc #0
+00000076: d4                      stl #4 [var_4]    ; var_4 = 0
+00000077: 11        loc_77:       ldlp #1 [&amp;var_1]
+00000078: 24 f2                   mint
+0000007a: 54                      ldnlp #4
+0000007b: 41                      ldc #1
+0000007c: f7                      in                ; in(1, MostNeg @ 4, &amp;var_1)
+0000007d: 15                      ldlp #5 [&amp;var_5]
+0000007e: 24 f2                   mint
+00000080: 51                      ldnlp #1
+00000081: 4c                      ldc #c
+00000082: fb                      out               ; out(12, MostNeg @ 1, &amp;var_5)
+00000083: 15                      ldlp #5 [&amp;var_5]
+00000084: 24 f2                   mint
+00000086: 52                      ldnlp #2
+00000087: 4c                      ldc #c
+00000088: fb                      out               ; out(12, MostNeg @ 2, &amp;var_5)
+00000089: 15                      ldlp #5 [&amp;var_5]
+0000008a: 24 f2                   mint
+0000008c: 53                      ldnlp #3
+0000008d: 4c                      ldc #c
+0000008e: fb                      out               ; out(12, MostNeg @ 3, &amp;var_5)
+0000008f: 10                      ldlp #0 [&amp;var_0]
+00000090: 81                      adc #1
+00000091: 24 f2                   mint
+00000093: 55                      ldnlp #5
+00000094: 41                      ldc #1
+00000095: f7                      in                ; in(1, MostNeg @ 5, &amp;var_0 + 1)
+00000096: 10                      ldlp #0 [&amp;var_0]
+00000097: 82                      adc #2
+00000098: 24 f2                   mint
+0000009a: 56                      ldnlp #6
+0000009b: 41                      ldc #1
+0000009c: f7                      in                ; in(1, MostNeg @ 6, &amp;var_0 + 2)
+0000009d: 10                      ldlp #0 [&amp;var_0]
+0000009e: 83                      adc #3
+0000009f: 24 f2                   mint
+000000a1: 57                      ldnlp #7
+000000a2: 41                      ldc #1
+000000a3: f7                      in                ; in(1, MostNeg @ 7, &amp;var_0 + 3)
+000000a4: 10                      ldlp #0 [&amp;var_0]
+000000a5: 81                      adc #1
+000000a6: f1                      lb
+000000a7: 10                      ldlp #0 [&amp;var_0]
+000000a8: 82                      adc #2
+000000a9: f1                      lb
+000000aa: 23 f3                   xor               ; A = var_0[2] ^ var_0[1]
+000000ac: 10                      ldlp #0 [&amp;var_0]
+000000ad: 83                      adc #3
+000000ae: f1                      lb
+000000af: 23 f3                   xor               ; A = var_0[3] ^ ( var_0[2] ^ var_0[1] )
+000000b1: 10                      ldlp #0 [&amp;var_0]
+000000b2: 81                      adc #1
+000000b3: 23 fb                   sb                ; var_0[1] = var_0[3] ^ ( var_0[2] ^ var_0[1] )
+000000b5: 11                      ldlp #1 [&amp;var_1]
+000000b6: f1                      lb                ; A = var_1
+000000b7: 74                      ldl #4 [var_4]    ; A = var_4, B = var_1
+000000b8: 15                      ldlp #5 [&amp;var_5]  ; A = &amp;var_5, B = var_4, C = var_1
+000000b9: f2                      bsub              ; A = &amp;var_5 + var_4, B = var_1
+000000ba: f1                      lb                ; A = var_5[var_4], B = var_1
+000000bb: 74                      ldl #4 [var_4]    ; A = var_4, B = var_5[var_4], C = var_1
+000000bc: 2c f1                   ssub              ; A = var_4 + 2 * var_5[var_4], B = var_1
+000000be: 23 f3                   xor               ; A = (var_4 + 2 * var_5[var_4]) ^ var_1
+000000c0: 10                      ldlp #0 [&amp;var_0]
+000000c1: 23 fb                   sb                ; var_0[0] = (var_4 + 2 * var_5[var_4]) ^ var_1
+000000c3: 10                      ldlp #0 [&amp;var_0]
+000000c4: 81                      adc #1
+000000c5: f1                      lb                ; A = var_0[1]
+000000c6: 74                      ldl #4 [var_4]
+000000c7: 15                      ldlp #5 [&amp;var_5]
+000000c8: f2                      bsub              ; A = &amp;var_5 + var_4, B = var_0[1]
+000000c9: 23 fb                   sb                ; var_5[var_4] = var_0[1]
+000000cb: 74                      ldl #4 [var_4]
+000000cc: 81                      adc #1
+000000cd: 25 fa                   dup               ; A = var_4 + 1, B = var_4 + 1
+000000cf: d4                      stl #4 [var_4]    ; var_4 var_4 + 1, A = var_4 + 1
+000000d0: cc                      eqc #c
+000000d1: a3                      cj loc_d5         ; saute à loc_d5 si var_4 != 12
+000000d2: 80                      adc #0
+000000d3: 40                      ldc #0
+000000d4: d4                      stl #4 [var_4]    ; var_4 = 0
+000000d5: 10        loc_d5:       ldlp #0 [&amp;var_0]
+000000d6: 24 f2                   mint
+000000d8: 41                      ldc #1
+000000d9: fb                      out               ; out(1, MostNeg, &amp;var_0)
+000000da: 66 0b                   j loc_77          ; saute à loc_77
+000000dc: **        str_dc:      .string "Boot ok"
+000000e4: **        str_e4:      .string "Code Ok"
+000000ec: **        str_ec:      .string "Decrypt"
+000000f4: 24 bc                   ajw #4c
+000000f6: 22 f0                   ret</programlisting>
+<simpara>Il s&#8217;agit de la boucle principale du transputer 0. La variable <literal>var_4</literal> est mise à 0 puis la boucle
+effectue les opérations suivantes :</simpara>
+<itemizedlist>
+<listitem>
+<simpara><literal>loc_7c</literal> : lecture d&#8217;un octet depuis le channel 4, stockage dans <literal>var_1</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>loc_80</literal> à <literal>loc_8e</literal> : envoi des 12 octets à l&#8217;adresse <literal>&amp;var_5</literal> vers les channels 1, 2, 3 ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>loc_8f</literal> à <literal>loc_a3</literal> : lecture d&#8217;un octet sur les channels 5, 6, et 7, respectivement stocké dans <literal>var_0[1]</literal>, <literal>var_0[2]</literal> et <literal>var_0[3]</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>loc_b3</literal> : mise à jour de l&#8217;octet <literal>var_0[1]</literal> avec l&#8217;opération <literal>var_0[3] ^ ( var_0[2] ^ var_0[1] )</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>loc_c1</literal> : mise à jour de l&#8217;octet <literal>var_0[0]</literal> avec l&#8217;opération <literal>(var_4 + 2 * var_5[var_4]) ^ var_1</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>loc_c9</literal> : mise à jour de l&#8217;octet <literal>var_5[var_4]</literal> avec l&#8217;octet précédemment calculé <literal>var_0[1]</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>loc_cb</literal> à <literal>loc_d4</literal> : incrément de 1 de la variable <literal>var_4</literal>, remise à 0 si <literal>var_4 == 12</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>loc_d5</literal> à <literal>loc_da</literal>: envoi de l&#8217;octet <literal>var_0[0]</literal> sur le channel 0 et retour au début de la boucle.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Sachant qu&#8217;il s&#8217;agit très certainement d&#8217;une routine de déchiffrement, il est raisonnable de faire
+les hypothèses suivantes sur le rôle de chaque variable :</simpara>
+<itemizedlist>
+<listitem>
+<simpara><literal>var_4</literal> est un compteur de boucle qui varie entre 0 et 11 ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>var_1</literal> est un octet chiffré ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>var_5</literal> contient la clé courante (12 fois <literal>0xff</literal> à l&#8217;entrée de la boucle),
+celle-ci est envoyée aux transputers 1, 2 et 3 via leurs channels respectifs ;</simpara>
+</listitem>
+<listitem>
+<simpara>les transputers 1, 2 et 3 retournent chacun un octet sur les channels 5, 6 et 7 qui sont stockés dans
+la variable temporaire <literal>var_0</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>var_0[1]</literal> contient un octet qui sera utilisé pour mettre à jour la clé courante à la position <literal>var_4</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>var_0[0]</literal> correspond au résultat du déchiffrement de l&#8217;octet stocké dans <literal>var_1</literal>.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Ces opérations peuvent être traduites en pseudo-code C de la façon suivante :</simpara>
+<programlisting language="c" linenumbering="unnumbered">void transputer_0(void) {
+    uint8_t c, p, t1, t2, t3, i;
+    uint8_t key[12] = "\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF";
+    i = 0;
+    for (;;) {
+       in(1, 4, &amp;c);    // lecture de l'octet chiffré
+
+       out(12, 1, key); // envoi de la clé au transputer 1
+       out(12, 2, key); // envoi de la clé au transputer 2
+       out(12, 3, key); // envoi de la clé au transputer 3
+
+       in(1, 5, &amp;t1);   // lecture d'un octet depuis le transputer 1
+       in(1, 6, &amp;t2);   // lecture d'un octet depuis le transputer 2
+       in(1, 7, &amp;t3);   // lecture d'un octet depuis le transputer 3
+
+       p = ( i + 2 * key[i] ) ^ c; // déchiffrement de l'octet
+       key[i] = t3 ^ (t2 ^ t1);    // mise à jour de la clé
+       i++;
+       i = (i % 12);
+
+       out(1, 0, &amp;p); // envoi de l'octet déchiffré
+    }
+}</programlisting>
+<simpara>Maintenant que le fonctionnement du transputer 0 est compris, il reste à analyser les transputers 1, 2 et 3
+pour déterminer les traitements effectués sur la clé courante à chaque itération. Pour cela,
+les données envoyées sur les channels 1, 2 et 3 avant le début de la boucle principale doivent
+être examinées : il s&#8217;agit en pratique des fichiers <literal>input_channel_1.bin</literal>, <literal>input_channel_2.bin</literal> et
+<literal>input_channel_3.bin</literal>.</simpara>
+</section>
+<section xml:id="_transputers_1_2_et_3">
+<title>Transputers 1, 2 et 3</title>
+<simpara>Pour des raisons de clarté, les fichiers <literal>input_channel_1.bin</literal>, <literal>input_channel_2.bin</literal> et
+<literal>input_channel_3.bin</literal> ont été renommés en <literal>t1.bin</literal>, <literal>t2.bin</literal> et <literal>t3.bin</literal>.</simpara>
+<simpara>De façon similaire au premier transputer, ces trois transputers démarrent sur un lien série.
+Pour le transputer 1, la valeur du &#8220;control byte&#8221; et le bloc de code sont extraits avec les commandes ci-dessous :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ dd if=t1.bin count=1 bs=1 | xxd -
+0000000: 70
+$ dd if=t1.bin count=$((0x70)) bs=1 skip=1 of=t1_code.bin</programlisting>
+<simpara>Le résultat peut alors être désassemblé avec <literal>st20dis</literal> :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ st20dis-linux t1_code.bin &gt; t1.asm</programlisting>
+<simpara>Le fichier résultant <xref linkend="_t1_asm"/> est disponible en annexe.</simpara>
+<simpara>Comme vu précédemment, le transputeur 1 commence par positionner le pointeur de pile :</simpara>
+<programlisting language="st20" linenumbering="unnumbered">; New subroutine 0+9; References: 0, Local Vars: 8
+00000000: 60 b8     sub_0:        ajw #-8       ; réserve 8 variables locales
+00000002: 24 f2                   mint          ; A = MostNeg
+00000004: 24 20 50                ldnlp #400    ; A = MostNeg @ 0x400
+00000007: 23 fc                   gajw          ; Wptr = MostNeg @ 0x400</programlisting>
+<simpara>Une première boucle est ensuite exécutée :</simpara>
+<programlisting language="st20" linenumbering="unnumbered">; New subroutine 9+67; References: 0, Local Vars: 8
+00000009: 60 b8     sub_9:        ajw #-8           ; réserve 8 variables locales
+0000000b: 15        loc_b:        ldlp #5 [&amp;var_5]
+0000000c: 24 f2                   mint
+0000000e: 54                      ldnlp #4
+0000000f: 4c                      ldc #c
+00000010: f7                      in                ; in(12, MostNeg @ 4, &amp;var_5)
+00000011: 75                      ldl #5 [var_5]
+00000012: 21 a2                   cj loc_26         ; saute à loc_26 si var_5 == 0
+00000014: 25 44                   ldc #54
+00000016: 21 fb                   ldpi [loc_6c]
+00000018: 24 f2                   mint
+0000001a: 54                      ldnlp #4
+0000001b: 75                      ldl #5 [var_5]
+0000001c: f7                      in                ; in(var_5, MostNeg @ 4, loc_6c)
+0000001d: 24 4b                   ldc #4b
+0000001f: 21 fb                   ldpi [loc_6c]
+00000021: 76                      ldl #6 [var_6]
+00000022: 75                      ldl #5 [var_5]
+00000023: fb                      out               ; out(var_5, var_6, loc_6c)
+00000024: 61 05                   j loc_b</programlisting>
+<simpara>Cette boucle est quasiment identique à la première boucle du transputer 0. On est alors
+tenté d&#8217;utiliser le script <literal>split.rb</literal> développé précédemment pour extraire les données
+envoyées sur chaque channel :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ ./split.rb t1.bin
+[+] control byte: 0x70
+[+] code written to t1_code.bin
+[+] 0x25 bytes =&gt; channel 1
+[+] 0x25 bytes =&gt; channel 2
+[+] 0x25 bytes =&gt; channel 3
+[+] 0x50 bytes =&gt; channel 1
+[+] 0x50 bytes =&gt; channel 2
+[+] 0x8c bytes =&gt; channel 3
+[+] len: 0x00, channel: 0x00, var_75: 0x00
+[+] wrote 0x75 bytes to t1_channel_1.bin
+[+] wrote 0x75 bytes to t1_channel_2.bin
+[+] wrote 0xb1 bytes to t1_channel_3.bin
+[+] wrote 0x00 bytes to t1_remaining.bin
+$ ./split.rb t2.bin
+[+] control byte: 0x70
+[+] code written to t2_code.bin
+[+] 0x25 bytes =&gt; channel 1
+[+] 0x25 bytes =&gt; channel 2
+[+] 0x25 bytes =&gt; channel 3
+[+] 0x64 bytes =&gt; channel 1
+[+] 0x9c bytes =&gt; channel 2
+[+] 0x54 bytes =&gt; channel 3
+[+] len: 0x00, channel: 0x00, var_75: 0x00
+[+] wrote 0x89 bytes to t2_channel_1.bin
+[+] wrote 0xc1 bytes to t2_channel_2.bin
+[+] wrote 0x79 bytes to t2_channel_3.bin
+[+] wrote 0x00 bytes to t2_remaining.bin
+$ ./split.rb t3.bin
+[+] control byte: 0x70
+[+] code written to t3_code.bin
+[+] 0x25 bytes =&gt; channel 1
+[+] 0x25 bytes =&gt; channel 2
+[+] 0x25 bytes =&gt; channel 3
+[+] 0x98 bytes =&gt; channel 1
+[+] 0x70 bytes =&gt; channel 2
+[+] 0x84 bytes =&gt; channel 3
+[+] len: 0x00, channel: 0x00, var_75: 0x00
+[+] wrote 0xbd bytes to t3_channel_1.bin
+[+] wrote 0x95 bytes to t3_channel_2.bin
+[+] wrote 0xa9 bytes to t3_channel_3.bin
+[+] wrote 0x00 bytes to t3_remaining.bin</programlisting>
+<simpara>Le script fonctionne correctement sur les trois transputers et pour chacun d&#8217;eux, les
+données envoyées sur les channels 1, 2 et 3 sont extraites. On peut remarquer qu&#8217;après avoir
+effectué cette première boucle, il n&#8217;y a plus de données en attente sur le lien série (les fichiers
+<literal>t1_remaining.bin</literal>, <literal>t2_remaining.bin</literal> et <literal>t3_remaining.bin</literal> sont vides).
+On remarque également que le &#8220;control byte&#8221; est identique pour les trois transputers. En réalité, le code
+extrait est le même pour les trois, comme indiqué ci-dessous :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ md5sum t*_code.bin
+0cbeb2a7a4f269356aeec0fe6bfc9192  t1_code.bin
+0cbeb2a7a4f269356aeec0fe6bfc9192  t2_code.bin
+0cbeb2a7a4f269356aeec0fe6bfc9192  t3_code.bin</programlisting>
+<simpara>Il suffit donc d&#8217;analyser un seul transputer pour comprendre les trois.</simpara>
+<simpara>L&#8217;analyse continue ensuite après la première boucle, à l&#8217;adresse <literal>loc_26</literal> :</simpara>
+<programlisting language="st20" linenumbering="unnumbered">00000026: 11        loc_26:       ldlp #1 [&amp;var_1]
+00000027: 24 f2                   mint
+00000029: 54                      ldnlp #4
+0000002a: 4c                      ldc #c
+0000002b: f7                      in                 ; in(12, MostNeg @ 4, &amp;var_1)
+0000002c: 11                      ldlp #1 [&amp;var_1]
+0000002d: 24 f2                   mint
+0000002f: 51                      ldnlp #1
+00000030: 4c                      ldc #c
+00000031: fb                      out                ; out(12, MostNeg @ 1, &amp;var_1)
+00000032: 11                      ldlp #1 [&amp;var_1]
+00000033: 24 f2                   mint
+00000035: 52                      ldnlp #2
+00000036: 4c                      ldc #c
+00000037: fb                      out                ; out(12, MostNeg @ 2, &amp;var_1)
+00000038: 11                      ldlp #1 [&amp;var_1]
+00000039: 24 f2                   mint
+0000003b: 53                      ldnlp #3
+0000003c: 4c                      ldc #c
+0000003d: fb                      out                ; out(12, MostNeg @ 3, &amp;var_1)
+0000003e: 10                      ldlp #0 [&amp;var_0]
+0000003f: 81                      adc #1
+00000040: 24 f2                   mint
+00000042: 55                      ldnlp #5
+00000043: 41                      ldc #1
+00000044: f7                      in                 ; in(1, MostNeg @ 5, &amp;var_0 + 1)
+00000045: 10                      ldlp #0 [&amp;var_0]
+00000046: 82                      adc #2
+00000047: 24 f2                   mint
+00000049: 56                      ldnlp #6
+0000004a: 41                      ldc #1
+0000004b: f7                      in                 ; in(1, MostNeg @ 6, &amp;var_0 + 2)
+0000004c: 10                      ldlp #0 [&amp;var_0]
+0000004d: 83                      adc #3
+0000004e: 24 f2                   mint
+00000050: 57                      ldnlp #7
+00000051: 41                      ldc #1
+00000052: f7                      in                 ; in(1, MostNeg @ 7, &amp;var_0 + 3)
+00000053: 10                      ldlp #0 [&amp;var_0]
+00000054: 81                      adc #1
+00000055: f1                      lb                 ; A = var_0[1]
+00000056: 10                      ldlp #0 [&amp;var_0]
+00000057: 82                      adc #2
+00000058: f1                      lb                 ; A = var_0[2], B = var_0[1]
+00000059: 23 f3                   xor                ; A = var_0[2] ^ var_0[1]
+0000005b: 10                      ldlp #0 [&amp;var_0]
+0000005c: 83                      adc #3
+0000005d: f1                      lb                 ; A = var_0[3], B = var_0[2] ^ var_0[1]
+0000005e: 23 f3                   xor                ; A = var_0[3] ^ (var_0[2] ^ var_0[1])
+00000060: 25 fa                   dup                ; A = var_0[3] ^ (var_0[2] ^ var_0[1]), B = A
+00000062: 10                      ldlp #0 [&amp;var_0]
+00000063: 23 fb                   sb                 ; var_0[0] = var_0[3] ^ (var_0[2] ^ var_0[1])
+00000065: 10                      ldlp #0 [&amp;var_0]
+00000066: 24 f2                   mint
+00000068: 41                      ldc #1
+00000069: fb                      out                ; out(1, MostNeg, var_0[3] ^ (var_0[2] ^ var_0[1]))
+0000006a: 64 0a                   j loc_26           ; saute à loc_26
+0000006c: 00        loc_6c:       nop
+0000006d: b8                      ajw #8
+0000006e: 22 f0                   ret</programlisting>
+<simpara>Ce code revient à effectuer les opérations suivantes :</simpara>
+<itemizedlist>
+<listitem>
+<simpara><literal>loc_26</literal> à <literal>loc_2b</literal> : lecture de 12 octets du channel 4 vers l&#8217;adresse de <literal>var_1</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>loc_2c</literal> à <literal>loc_3d</literal> : envoi de 12 octets de l&#8217;adresse de <literal>var_1</literal> vers les channels 1, 2 et 3 ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>loc_3e</literal> à <literal>loc_52</literal> : lecture d&#8217;un octet sur les channels 5, 6, et 7, respectivement stocké dans <literal>var_0[1]</literal>, <literal>var_0[2]</literal> et <literal>var_0[3]</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>loc_53</literal> à <literal>loc_63</literal> : mise à jour de l&#8217;octet <literal>var_0[0]</literal> avec l&#8217;opération <literal>var_0[3] ^ ( var_0[2] ^ var_0[1] )</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>loc_65</literal> à <literal>loc_6a</literal> : envoi de l&#8217;octet <literal>var_0[0]</literal> vers le channel 0 et saute à l&#8217;adresse <literal>loc_26</literal>.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Ces opérations peuvent être traduites en pseudo-code C de la façon suivante :</simpara>
+<formalpara xml:id="_transputer_1">
+<title>Pseudo-code transputer 1</title>
+<para>
+<programlisting language="c" linenumbering="unnumbered">void transputer_1(void) {
+    uint8_t res, t4, t5, t6;
+    uint8_t key[12];
+
+    for (;;) {
+        in(12, 4, key); // lecture de la clé
+
+        out(12, 1, key); // envoi de la clé au transputer 4
+        out(12, 2, key); // envoi de la clé au transputer 5
+        out(12, 3, key); // envoi de la clé au transputer 6
+
+        in(1, 5, &amp;t4); // lecture d'un octet depuis le transputer 4
+        in(1, 6, &amp;t5); // lecture d'un octet depuis le transputer 5
+        in(1, 7, &amp;t6); // lecture d'un octet depuis le transputer 6
+
+        res = t6 ^ (t5 ^ t4);
+
+        out(1, 0, &amp;res); // envoi de res sur le channel 0
+    }
+}</programlisting>
+</para>
+</formalpara>
+<simpara>Le fonctionnement des transputers 2 et 3 est identique. Pour terminer l&#8217;analyse,
+il faut donc s&#8217;intéresser aux transputers 4 à 12.</simpara>
+</section>
+<section xml:id="_transputers_4_à_12">
+<title>Transputers 4 à 12</title>
+<simpara>Le transputer 4 est initialisé avec les données envoyées par le transputer 1 sur le channel 1,
+c&#8217;est-à-dire :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ hexdump -C t1_channel_1.bin
+00000000  24 60 bd 24 f2 24 20 50  23 fc 60 bd 10 24 f2 54  |$`.$.$ P#.`..$.T|
+00000010  4c f7 4b 21 fb 24 f2 54  70 f7 43 21 fb 72 f2 f6  |L.K!.$.Tp.C!.r..|
+00000020  00 b3 22 f0 20 44 00 00  00 00 00 00 00 0c 00 00  |..". D..........|
+00000030  00 73 72 74 f7 22 f0 73  72 74 fb 22 f0 60 bb 40  |.srt.".srt.".`.@|
+00000040  d1 40 11 23 fb 4c d0 12  24 f2 54 76 61 93 40 d0  |.@.#.L..$.Tva.@.|
+00000050  70 12 f2 f1 11 f1 f2 2f  4f 24 f6 11 23 fb 70 81  |p....../O$..#.p.|
+00000060  d0 4c 70 f9 a2 61 09 41  d0 11 24 f2 76 63 98 20  |.Lp..a.A..$.vc. |
+00000070  62 03 20 20 20                                    |b.   |
+00000075</programlisting>
+<simpara>Le &#8220;control byte&#8221; valant <literal>0x24</literal>, on peut alors extraire le code d&#8217;initialisation (fichier <literal>t4_code.bin</literal>)
+et les données restantes sur le lien (fichier <literal>t4_remaining.bin</literal>) :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ dd if=t1_channel_1.bin of=t4_code.bin bs=1 skip=1 count=$((0x24))
+36+0 records in
+36+0 records out
+36 bytes (36 B) copied, 0.000228839 s, 157 kB/s
+$ dd if=t1_channel_1.bin of=t4_remaining.bin bs=1 skip=$((1+0x24))
+80+0 records in
+80+0 records out
+80 bytes (80 B) copied, 0.000308885 s, 259 kB/s
+$ st20dis-linux t4_code.bin &gt; t4.asm</programlisting>
+<simpara>Le résultat du désassemblage du code d&#8217;initialisation est présenté ci-dessous :</simpara>
+<formalpara>
+<title>t4.asm</title>
+<para>
+<programlisting language="st20" linenumbering="unnumbered">; New subroutine 0+9; References: 0, Local Vars: 3
+00000000: 60 bd     sub_0:        ajw #-3            ; réserve 3 variables
+00000002: 24 f2                   mint
+00000004: 24 20 50                ldnlp #400
+00000007: 23 fc                   gajw               ; Wptr = MostNeg @ 0x400
+
+; New subroutine 9+1b; References: 0, Local Vars: 3
+00000009: 60 bd     sub_9:        ajw #-3            ; réserve 3 variables
+0000000b: 10                      ldlp #0 [&amp;var_0]
+0000000c: 24 f2                   mint
+0000000e: 54                      ldnlp #4
+0000000f: 4c                      ldc #c
+00000010: f7                      in                 ; in(12, MostNeg @ 4, &amp;var_0)
+00000011: 4b                      ldc #b
+00000012: 21 fb                   ldpi [loc_1f]
+00000014: 24 f2                   mint
+00000016: 54                      ldnlp #4
+00000017: 70                      ldl #0 [var_0]
+00000018: f7                      in                 ; in(var_0, MostNeg @ 4, loc_1f)
+00000019: 43                      ldc #3
+0000001a: 21 fb                   ldpi [loc_1f]
+0000001c: 72                      ldl #2 [var_2]
+0000001d: f2                      bsub               ; A = var_2 + loc_1f
+0000001e: f6                      gcall              ; gcall(var_2 + loc_1f)
+0000001f: 00        loc_1f:       nop
+00000020: b3                      ajw #3
+00000021: 22 f0                   ret
+00000023: 20                      .db #20 ' '</programlisting>
+</para>
+</formalpara>
+<simpara>Ce code d&#8217;initialisation réalise les opérations suivantes :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>lecture de 12 octets sur le channel 4, stockage à l&#8217;adresse <literal>&amp;var_0</literal> (les variables <literal>var_0</literal>, <literal>var_1</literal> et <literal>var_2</literal> sont donc mises à jour) ;</simpara>
+</listitem>
+<listitem>
+<simpara>lecture de <literal>var_0</literal> octets sur le channel, stockage à l&#8217;adresse <literal>loc_1f</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara>appel d&#8217;une fonction à l&#8217;adresse <literal>loc_1f + var_2</literal>.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>On peut alors s&#8217;intéresser aux données restantes sur le lien pour comprendre l&#8217;état des trois variables :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ dd if=t4_remaining.bin bs=1 count=12 | xxd -
+0000000: 4400 0000 0000 0000 0c00 0000            D...........</programlisting>
+<simpara>Les trois variables sont alors initialisées de la façon suivante :</simpara>
+<itemizedlist>
+<listitem>
+<simpara><literal>var_0</literal> : <literal>0x44</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>var_1</literal> : <literal>0</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara><literal>var_2</literal> : <literal>0xc</literal>.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Le code d&#8217;initialisation va donc lire <literal>0x44 = 68</literal> octets sur le lien série,
+stocker le résultat à l&#8217;adresse <literal>loc_1f</literal>, puis appeller une fonction à l&#8217;adresse
+<literal>loc_1f + 0xc</literal>. Le code exécuté est extrait puis désassemblé avec les commandes ci-dessous :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ dd if=t4_remaining.bin bs=1 count=$((0x44)) skip=12 &gt; t4_code_gcall.bin
+$ hexdump -C t4_code_gcall.bin
+00000000  73 72 74 f7 22 f0 73 72  74 fb 22 f0 60 bb 40 d1  |srt.".srt.".`.@.|
+00000010  40 11 23 fb 4c d0 12 24  f2 54 76 61 93 40 d0 70  |@.#.L..$.Tva.@.p|
+00000020  12 f2 f1 11 f1 f2 2f 4f  24 f6 11 23 fb 70 81 d0  |....../O$..#.p..|
+00000030  4c 70 f9 a2 61 09 41 d0  11 24 f2 76 63 98 20 62  |Lp..a.A..$.vc. b|
+00000040  03 20 20 20                                       |.   |
+00000044
+$ st20dis-linux t4_code_gcall.bin &gt; t4_code_gcall.asm
+$ ls -al t4_remaining.bin
+-rw-rw-r-- 1 jpe jpe 80 avril 21 21:12 t4_remaining.bin</programlisting>
+<simpara>Au passage, on peut remarquer que le fichier <literal>t4_remaining.bin</literal> (80 octets) contient uniquement
+les 12 octets permettant d&#8217;initialiser les trois variables et les <literal>0x44 = 68</literal> octets correspondant
+au code exécuté par l&#8217;instruction <literal>gcall</literal> : il n&#8217;y a donc plus de données en attente sur le lien 0.</simpara>
+<simpara>Le résultat du désassemblage est le suivant :</simpara>
+<formalpara xml:id="_t4_code_gcall">
+<title>t4_code_gcall.asm</title>
+<para>
+<programlisting language="st20" linenumbering="unnumbered">; New subroutine 0+6; References: 1, Local Vars: 0
+;       Called/referenced from 1b
+00000000: 73     sub_0:        ldl #3 [arg_3]
+00000001: 72                   ldl #2 [arg_2]
+00000002: 74                   ldl #4 [arg_4]
+00000003: f7                   in                   ; in(arg_4, arg_2, arg_3)
+00000004: 22 f0                ret
+
+; New subroutine 6+6; References: 1, Local Vars: 0
+;       Called/referenced from 3c
+00000006: 73     sub_6:        ldl #3 [arg_3]
+00000007: 72                   ldl #2 [arg_2]
+00000008: 74                   ldl #4 [arg_4]
+00000009: fb                   out                 ; out(arg_4, arg_2, arg_3)
+0000000a: 22 f0                ret
+
+; New subroutine c+38; References: 0, Local Vars: 5
+0000000c: 60 bb  sub_c:        ajw #-5               ; point d'entrée
+0000000e: 40                   ldc #0
+0000000f: d1                   stl #1 [var_1]        ; var_1 = 0
+00000010: 40                   ldc #0
+00000011: 11                   ldlp #1 [&amp;var_1]
+00000012: 23 fb                sb                    ; var_1[0] = 0
+00000014: 4c     loc_14:       ldc #c
+00000015: d0                   stl #0 [var_0]        ; var_0 = 12
+00000016: 12                   ldlp #2 [&amp;var_2]      ; A = &amp;var_2
+00000017: 24 f2                mint                  ; A = MostNeg, B = &amp;var_2
+00000019: 54                   ldnlp #4              ; A = MostNeg @ 4, B = &amp;var_2
+0000001a: 76                   ldl #6 [arg_1]        ; A = arg_1, B = MostNeg @ 4, C = &amp;var_2
+0000001b: 61 93                call sub_0            ; sub_0(arg1, MostNeg @ 4, &amp;var_2) &lt;=&gt;
+                                                     ; in(var_0 = 12, MostNeg @ 4, &amp;var_2)
+0000001d: 40                   ldc #0
+0000001e: d0                   stl #0 [var_0]        ; var_0 = 0
+0000001f: 70     loc_1f:       ldl #0 [var_0]
+00000020: 12                   ldlp #2 [&amp;var_2]
+00000021: f2                   bsub
+00000022: f1                   lb                    ; A = var_2[var_0]
+00000023: 11                   ldlp #1 [&amp;var_1]
+00000024: f1                   lb                    ; A = var_1[0], B = var_2[var_0]
+00000025: f2                   bsub                  ; A = var_1[0] + var_2[var_0]
+00000026: 2f 4f                ldc #ff
+00000028: 24 f6                and                   ; A = (var_1[0] + var_2[var_0]) &amp; 0xff
+0000002a: 11                   ldlp #1 [&amp;var_1]
+0000002b: 23 fb                sb                    ; var_1[0] = (var_1[0] + var_2[var_0]) &amp; 0xff
+0000002d: 70                   ldl #0 [var_0]
+0000002e: 81                   adc #1
+0000002f: d0                   stl #0 [var_0]        ; var_0 += 1
+00000030: 4c                   ldc #c
+00000031: 70                   ldl #0 [var_0]
+00000032: f9                   gt
+00000033: a2                   cj loc_36             ; saute à loc_36 si var_0 &gt;= 12
+00000034: 61 09                j loc_1f              ; saute à loc_1f
+00000036: 41     loc_36:       ldc #1
+00000037: d0                   stl #0 [var_0]        ; var_0 = 1
+00000038: 11                   ldlp #1 [&amp;var_1]      ; A = &amp;var_1
+00000039: 24 f2                mint                  ; A = MostNeg, B = &amp;var_1
+0000003b: 76                   ldl #6 [arg_1]        ; A = arg_1, B = MostNeg, C = &amp;var_1
+0000003c: 63 98                call sub_6            ; sub_6(arg_1, MostNeg, &amp;var_1) &lt;=&gt;
+                                                     ; out(var_0 = 1, MostNeg, &amp;var_1)
+0000003e: 20                   .db #20 ' '
+0000003f: 62 03                j loc_14              ; saute à loc_14
+00000041: 20                   .db #20 ' '
+00000042: 20                   .db #20 ' '
+00000043: 20                   .db #20 ' '</programlisting>
+</para>
+</formalpara>
+<simpara>L&#8217;exécution commence avec l&#8217;appel de la fonction <literal>sub_c</literal> (point d&#8217;entrée). On constate la présence
+de deux boucles imbriquées, ainsi que des appels à deux fonctions, <literal>sub_0</literal> et <literal>sub_6</literal>. Pour
+comprendre comment s&#8217;effectue le passage de paramètres, il est nécessaire de se réferrer à la
+documentation. D&#8217;après celle-ci, les paramètres sont passés dans les registres <literal>A</literal>, <literal>B</literal>, <literal>C</literal> et
+le pointeur de pile est décalé pour réserver 4 variables :</simpara>
+<informalfigure>
+<mediaobject>
+<imageobject>
+<imagedata fileref="images/rk_st20_call.png" align="center"/>
+</imageobject>
+<textobject><phrase>rk st20 call</phrase></textobject>
+</mediaobject>
+</informalfigure>
+<simpara>Les deux fonctions <literal>sub_0</literal> et <literal>sub_6</literal> font référence à un quatrième argument, <literal>arg_4</literal>. Il s&#8217;agit
+en fait de la valeur stockée dans <literal>var_0</literal> au niveau de la fonction appelante.</simpara>
+<simpara>La fonction <literal>sub_c</literal> peut être traduite dans le pseudo-code C ci-dessous :</simpara>
+<programlisting language="C" linenumbering="unnumbered">/* Transputer 4 */
+void sub_c_t4(uint32_t arg_1) {
+    uint8_t i, var_1;
+    uint8_t var_2[12];
+
+    var_1 = 0;
+    for (;;) {
+        in(12, 4, var_2);
+        for (i = 0; i &lt; 12; i++) {
+            var_1 = var_1 + var_2[i];
+        }
+        out(1, 0, &amp;var_1);
+    }
+}</programlisting>
+<simpara>La fonction <literal>sub_c</literal> commence par initialiser un état (la variable <literal>var_1</literal>) puis
+entre dans une boucle infinie. Celle-ci va lire 12 octets sur le channel 4 puis
+entre dans une seconde boucle pour mettre à jour la variable <literal>var_1</literal> en fonction
+des 12 octets lus. Enfin, le contenu de la variable <literal>var_1</literal> est envoyé sur le channel 0
+et l&#8217;exécution reprend au début de la boucle infinie.</simpara>
+<simpara>Les 12 octets lus sur le channel 4 correspondent aux données envoyées
+par le transputer 1 (voir <xref linkend="_transputer_1"/>), à savoir la clé courante. Le résultat est stocké à
+l&#8217;adresse <literal>var_2</literal>.</simpara>
+<simpara>Il faut maintenant analyser les transputers 5 à 12 de la même façon.
+Le script Ruby ci-dessous automatise les opérations d&#8217;extraction
+des différentes parties de code :</simpara>
+<programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
+
+Dir["t*_channel_*.bin"].each do |p|
+  p =~ /t(\d)+_channel_(\d+)+\.bin/
+  t_src, c = $1.to_i, $2.to_i
+  t_dst = t_src * 3 + c
+  data = File.open(p, "rb").read.unpack('C*')
+
+  control_byte = data.shift
+  init_code = data.shift(control_byte).pack('C*')
+
+  size, _, offset = *data.shift(12).pack('C*').unpack('LLL')
+  code = data.shift(size).pack('C*')
+
+  init_code_path = "t#{t_dst}_code.bin"
+  File.open(init_code_path, "wb") {|f| f.write init_code}
+
+  code_path = "t#{t_dst}_code_gcall.bin"
+  File.open(code_path, "wb") {|f| f.write code}
+
+  remaining = data.size
+  puts "T#{t_dst}, init_code =&gt; #{init_code_path}, code =&gt; #{code_path}, offset: #{offset}, remaining: #{remaining}"
+end</programlisting>
+<simpara>Son exécution retourne le résultat suivant :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$  ./extract.rb
+T12, init_code =&gt; t12_code.bin, code =&gt; t12_code_gcall.bin, offset: 12, remaining: 0
+T10, init_code =&gt; t10_code.bin, code =&gt; t10_code_gcall.bin, offset: 12, remaining: 0
+T6, init_code =&gt; t6_code.bin, code =&gt; t6_code_gcall.bin, offset: 12, remaining: 0
+T11, init_code =&gt; t11_code.bin, code =&gt; t11_code_gcall.bin, offset: 12, remaining: 0
+T4, init_code =&gt; t4_code.bin, code =&gt; t4_code_gcall.bin, offset: 12, remaining: 0
+T5, init_code =&gt; t5_code.bin, code =&gt; t5_code_gcall.bin, offset: 12, remaining: 0
+T7, init_code =&gt; t7_code.bin, code =&gt; t7_code_gcall.bin, offset: 12, remaining: 0
+T9, init_code =&gt; t9_code.bin, code =&gt; t9_code_gcall.bin, offset: 12, remaining: 0
+T8, init_code =&gt; t8_code.bin, code =&gt; t8_code_gcall.bin, offset: 12, remaining: 0</programlisting>
+<simpara>On constate que le code d&#8217;initialisation est identique pour tous ces transputers :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ md5sum t*_code.bin
+3baf20a3228b40f92da74bc37f1655b1  t10_code.bin
+3baf20a3228b40f92da74bc37f1655b1  t11_code.bin
+3baf20a3228b40f92da74bc37f1655b1  t12_code.bin
+3baf20a3228b40f92da74bc37f1655b1  t4_code.bin
+3baf20a3228b40f92da74bc37f1655b1  t5_code.bin
+3baf20a3228b40f92da74bc37f1655b1  t6_code.bin
+3baf20a3228b40f92da74bc37f1655b1  t7_code.bin
+3baf20a3228b40f92da74bc37f1655b1  t8_code.bin
+3baf20a3228b40f92da74bc37f1655b1  t9_code.bin</programlisting>
+<simpara>Par contre, le code correspondant à la fonction appelée par l&#8217;instruction <literal>gcall</literal> est différent
+pour chaque transputer :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ md5sum t*_code_gcall.bin
+36301de282128261ce30c7c7ee9e7bbd  t10_code_gcall.bin
+cd8aebe05554ed86a6f3ad427baa6518  t11_code_gcall.bin
+33ae0ea641c046913845a24e2033cd34  t12_code_gcall.bin
+51be7b81c12f08e0756fa2d91c70f199  t4_code_gcall.bin
+94441e3bff1beafb2a871078875f6d8a  t5_code_gcall.bin
+26f82821abe326242096929df7af0bcb  t6_code_gcall.bin
+13433117ca2c08b05a2d67b43f8ff40c  t7_code_gcall.bin
+e72410105cdc42151108b42000dc4c17  t8_code_gcall.bin
+0107b594c3601eee98adc4bf7fae57d4  t9_code_gcall.bin</programlisting>
+<simpara>Pour poursuivre, il faut donc désassembler chacun de ces fichiers (sauf pour le transputer 4
+qui a déjà été traité) puis analyser la sortie.</simpara>
+<simpara>L&#8217;analyse du code désassemblé ne pose pas de difficultés particulières et peut être
+effectuée de façon similaire à celle du transputer 4. Tous les transputers de 4 à 12 suivent
+une même logique qui peut être décrite ainsi :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>initialisation d&#8217;un état (exemple : mise à zéro d&#8217;une variable) ;</simpara>
+</listitem>
+<listitem>
+<simpara>démarrage d&#8217;une boucle infinie :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>lecture des 12 octets de la clé courante,</simpara>
+</listitem>
+<listitem>
+<simpara>mise à jour de l&#8217;état en fonction des 12 octets lus,</simpara>
+</listitem>
+<listitem>
+<simpara>calcul de la valeur de retour,</simpara>
+</listitem>
+<listitem>
+<simpara>envoi d&#8217;un octet de l&#8217;état et retour au début de la boucle.</simpara>
+</listitem>
+</itemizedlist>
+</listitem>
+</itemizedlist>
+<simpara>Des analyses similaires permettent d&#8217;obtenir le pseudo-code suivant pour les transputers 5 à 10 :</simpara>
+<programlisting language="c" linenumbering="unnumbered">/* Transputer 5 */
+void sub_c_t5(uint32_t arg_1) {
+    uint8_t i, var_1;
+    uint8_t var_2[12];
+
+    var_1 = 0; // initialisation de l'état
+    for (;;) {
+        in(12, 4, var_2); // lecture de la clé
+        for (i = 0; i &lt; 12; i++) {
+            var_1 = var_1 ^ var_2[i];
+        }
+        out(1, 0, &amp;var_1); // envoi du résultat
+    }
+}
+
+/* Transputer 6 */
+void sub_c_t6(uint32_t arg1) {
+    uint16_t k1, k2, k3, var_1, var_3;
+    uint8_t var_4[12];
+    int i;
+
+    var_1 = 0;
+    var_3 = 0;
+    for (;;) {
+        in(12, 4, var_4); // lecture de la clé
+
+        if (var_3 == 0) { // initialisation de l'état
+            for (i = 0; i &lt; 12; i++) {
+                var_1 = (var_1 + var_4[i]) &amp; 0xffff;
+            }
+            var_3 = 1;
+        }
+
+        k1 = (var_1 &amp; 0x8000) &gt;&gt; 0xf;
+        k2 = (var_1 &amp; 0x4000) &gt;&gt; 0xe;
+        k2 = k2 ^ k1;
+        k3 = var_1 &lt;&lt; 1;
+        var_1 = k3 ^ k2; // mise à jour de l'état
+        out(1, 0, &amp;var_1); // envoi du résultat
+    }
+}
+
+/* Transputer 7 */
+void sub_c_t7(uint32_t arg1) {
+    uint8_t var_1, var_2;
+    uint8_t var_3[12];
+    int i;
+
+    for (;;) {
+        in(12, 4, &amp;var_3); // lecture de la clé
+        var_1 = 0;
+        var_2 = 0;
+
+        for (i = 0; i &lt; 6; i++) {
+            var_1 += var_3[i];
+            var_2 += var_3[i + 6];
+        }
+
+        var_1 = var_1 ^ var_2;
+        out(1, 0, &amp;var_1); // envoi du résultat
+   }
+}
+
+/* Transputer 8 */
+void sub_c_t8(uint32_t arg1) {
+    uint8_t var_1, var_2, var_3;
+    uint8_t var_4[4][12];
+    int i, j;
+
+    /* initialisation de l'état */
+    var_2 = 0;
+    for (i = 0; i &lt; 4; i++) {
+       for (j = 0; j &lt; 12; j++) {
+           var_4[i][j] = 0;
+       }
+    }
+
+    for (;;) {
+        /* mise à jour de l'état */
+        in(12, 4, var_4[var_2]); // lecture de la clé courante
+        var_2 = (var_2 + 1) % 4;
+
+        /* calcul du résultat */
+        var_3 = 0;
+        for (i = 0; i &lt; 4; i++) {
+            var_1 = 0;
+            for (j = 0; j &lt; 12; j++) {
+                var_1 += var_4[i][j];
+            }
+            var_3 = var_1 ^ var_3;
+        }
+        out(1, 0, &amp;var_3); // envoi du résultat
+    }
+}
+
+/* Transputer 9 */
+void sub_c_t9(uint32_t arg1) {
+    uint8_t var1;
+    uint8_t var_2[12];
+    int i;
+
+    for (;;) {
+        var_1 = 0;
+        in(12, 4, var_2); // lecture de la clé
+        for (i = 0; i &lt; 12; i++) {
+            var_1 = var_1 ^ (var_2[i] &lt;&lt; (i &amp; 7));
+        }
+        out(1, 0, &amp;var_1); // envoi du résultat
+    }
+}
+
+/* Transputer 10 */
+void sub_c_t10(uint32_t arg1) {
+    uint8_t var_1, var_2;
+    uint8_t var_4[4][12];
+    int i, j;
+
+    /* initialisation de l'état */
+    var_2 = 0;
+    for (i = 0; i &lt; 4; i++) {
+       for (j = 0; j &lt; 12; j++) {
+           var_4[i][j] = 0;
+       }
+    }
+
+    for (;;) {
+        /* mise à jour de l'état */
+        in(12, 4, var_4[var_2]); // lecture de la clé courante
+        var_2 = (var_2 + 1) % 4;
+
+        /* calcul du résultat */
+        var_1 = 0;
+        for (i = 0; i &lt; 4; i++) {
+            var_1 += var_4[i][0];
+        }
+        i = var_1 &amp; 3;
+        j = (var_1 &gt;&gt; 4) % 12;
+        var_1 = var_4[i][j];
+
+        out(1, 0, &amp;var_1); // envoi du résultat
+    }
+}</programlisting>
+<simpara>Les transputers 11 et 12 présentent cependant une particularité par rapport aux précédents :
+ils sont en effet reliés par un lien de communication. Pour comprendre l&#8217;utilité de celui-ci,
+il faut examiner le code assembleur des deux transputers.</simpara>
+<simpara>Le code du transputer 11 est présenté ci-dessous :</simpara>
+<programlisting language="st20" linenumbering="unnumbered">0000000c: 60 ba  sub_c:        ajw #-6
+0000000e: 40                   ldc #0
+0000000f: d1                   stl #1 [var_1]      ; var_1 = 0
+00000010: 40                   ldc #0
+00000011: d2                   stl #2 [var_2]      ; var_2 = 0
+00000012: 4c     loc_12:       ldc #c
+00000013: d0                   stl #0 [var_0]      ; var_0 = 12
+00000014: 13                   ldlp #3 [&amp;var_3]
+00000015: 24 f2                mint
+00000017: 54                   ldnlp #4
+00000018: 77                   ldl #7 [arg_1]
+00000019: 61 95                call sub_0           ; in(12, MostNeg @ 4, &amp;var_3)
+0000001b: 40                   ldc #0
+0000001c: 11                   ldlp #1 [&amp;var_1]
+0000001d: 23 fb                sb                   ; var_1[0] = 0
+0000001f: 13                   ldlp #3 [&amp;var_3]
+00000020: f1                   lb                   ; A = var_3[0]
+00000021: 13                   ldlp #3 [&amp;var_3]
+00000022: 83                   adc #3
+00000023: f1                   lb                   ; A = var_3[3], B = var_3[0]
+00000024: 23 f3                xor                  ; A = var_3[3] ^ var_3[0]
+00000026: 13                   ldlp #3 [&amp;var_3]
+00000027: 87                   adc #7
+00000028: f1                   lb                   ; A = var_3[7], B = var_3[3] ^ var_3[0]
+00000029: 23 f3                xor                  ; A = var_3[7] ^ ( var_3[3] ^ var_3[0] )
+0000002b: 2f 4f                ldc #ff              ;
+0000002d: 24 f6                and                  ;
+0000002f: 11                   ldlp #1 [&amp;var_1]     ;
+00000030: 23 fb                sb                   ; var_1[0] = ( var_3[7] ^ ( var_3[3] ^ var_3[0] ) ) &amp; 0xff
+00000032: 41                   ldc #1
+00000033: d0                   stl #0 [var_0]
+00000034: 11                   ldlp #1 [&amp;var_1]
+00000035: 24 f2                mint
+00000037: 51                   ldnlp #1
+00000038: 77                   ldl #7 [arg_1]
+00000039: 63 9b                call sub_6           ; out(1, MostNeg @ 1, &amp;var_1)
+                                                    ; envoi d'un octet à T12
+0000003b: 41                   ldc #1
+0000003c: d0                   stl #0 [var_0]
+0000003d: 11                   ldlp #1 [&amp;var_1]
+0000003e: 24 f2                mint
+00000040: 55                   ldnlp #5
+00000041: 77                   ldl #7 [arg_1]
+00000042: 64 9c                call sub_0           ; in(1, MostNeg @ 5, &amp;var_1)
+                                                    ; lecture d'un octet depuis T12
+00000044: 11                   ldlp #1 [&amp;var_1]
+00000045: f1                   lb
+00000046: 4c                   ldc #c
+00000047: 21 ff                rem                  ; A = var_1[0] % 12
+00000049: 2f 4f                ldc #ff
+0000004b: 24 f6                and
+0000004d: 11                   ldlp #1 [&amp;var_1]
+0000004e: 23 fb                sb                   ; var_1[0] = (var_1[0] % 12) &amp; 0xff
+00000050: 11                   ldlp #1 [&amp;var_1]
+00000051: f1                   lb
+00000052: 13                   ldlp #3 [&amp;var_3]
+00000053: f2                   bsub
+00000054: f1                   lb                   ; A = var_3[var_1[0]]
+00000055: 12                   ldlp #2 [&amp;var_2]
+00000056: 23 fb                sb                   ; var_2[0] = var_3[var_1[0]]
+00000058: 41                   ldc #1
+00000059: d0                   stl #0 [var_0]
+0000005a: 12                   ldlp #2 [&amp;var_2]
+0000005b: 24 f2                mint
+0000005d: 77                   ldl #7 [arg_1]
+0000005e: 65 96                call sub_6           ; out(1, MostNeg, &amp;var_2)
+00000060: 20                   .db #20 ' '
+00000061: 65 0f                j loc_12</programlisting>
+<simpara>Les opérations suivantes sont donc effectuées :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>mise à zéro de <literal>var_1</literal> et <literal>var_2</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara>début de la boucle infinie :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>lecture des 12 octets de clé dans <literal>var_3</literal>,</simpara>
+</listitem>
+<listitem>
+<simpara>mise à jour de <literal>var_1</literal> en fonction des 12 octets lus,</simpara>
+</listitem>
+<listitem>
+<simpara>envoi de la nouvelle valeur de <literal>var_1</literal> au transputer 12,</simpara>
+</listitem>
+<listitem>
+<simpara>lecture d&#8217;une nouvelle valeur de <literal>var_1</literal> depuis le transputer 12,</simpara>
+</listitem>
+<listitem>
+<simpara>mise à jour de <literal>var_2</literal> selon l&#8217;opération <literal>var_2 = var_3[var_1 % 12]</literal>,</simpara>
+</listitem>
+<listitem>
+<simpara>envoi de <literal>var_2</literal> sur le lien 0 puis retour au début de la boucle.</simpara>
+</listitem>
+</itemizedlist>
+</listitem>
+</itemizedlist>
+<simpara>Le pseudo-code C correspondant est présenté ci-dessous :</simpara>
+<programlisting language="c" linenumbering="unnumbered">/* Transputer 11 */
+void sub_c_t11(uint32_t arg1) {
+   uint8_t var_1, var_2;
+   uint8_t var_3[12];
+
+   for (;;) {
+       in(12, 4, var_3); // lecture de la clé courante
+       var_1 = var_3[7] ^ ( var_3[3] ^ var_3[0] );
+
+       out(1, 1, &amp;var_1); // envoi d'un octet au transputer 12
+       in(1, 5, &amp;var_1);  // lecture d'un octet depuis le transputer 12
+
+       var_2 = var_3[var_1 % 12];
+       out(1, 0, &amp;var_2); // envoi du résultat sur le lien 0
+   }
+}</programlisting>
+<simpara>Une analyse similaire est alors effectuée sur le code du transputer 12 :</simpara>
+<programlisting language="st20" linenumbering="unnumbered">0000000c: 60 ba  sub_c:        ajw #-6
+0000000e: 40                   ldc #0
+0000000f: d2                   stl #2 [var_2]    ; var_2 = 0
+00000010: 40                   ldc #0
+00000011: d1                   stl #1 [var_1]    ; var_1 = 0
+00000012: 40                   ldc #0
+00000013: d0                   stl #0 [var_0]    ; var_0 = 0
+00000014: 40     loc_14:       ldc #0
+00000015: 70                   ldl #0 [var_0]
+00000016: 13                   ldlp #3 [&amp;var_3]
+00000017: f2                   bsub
+00000018: 23 fb                sb                ; var_3[var_0] = 0
+0000001a: 70                   ldl #0 [var_0]
+0000001b: 81                   adc #1
+0000001c: d0                   stl #0 [var_0]    ; var_0 += 1
+0000001d: 4c                   ldc #c
+0000001e: 70                   ldl #0 [var_0]
+0000001f: f9                   gt
+00000020: a2                   cj loc_23         ; saute à loc_23 si var_0 &gt;= 12
+00000021: 60 01                j loc_14          ; saute à loc_14
+00000023: 40     loc_23:       ldc #0
+00000024: 11                   ldlp #1 [&amp;var_1]
+00000025: 23 fb                sb                ; var_1[0] = 0
+00000027: 13                   ldlp #3 [&amp;var_3]
+00000028: 81                   adc #1
+00000029: f1                   lb                ; A = var_3[1]
+0000002a: 13                   ldlp #3 [&amp;var_3]
+0000002b: 85                   adc #5
+0000002c: f1                   lb                ; A = var_3[5], B = var_3[1]
+0000002d: 23 f3                xor               ; A = var_3[5] ^ var_3[1]
+0000002f: 13                   ldlp #3 [&amp;var_3]
+00000030: 89                   adc #9
+00000031: f1                   lb                ; A = var_3[9], B = var_3[5] ^ var_3[1]
+00000032: 23 f3                xor               ; A = var_3[9] ^ (var_3[5] ^ var_3[1])
+00000034: 2f 4f                ldc #ff
+00000036: 24 f6                and
+00000038: 11                   ldlp #1 [&amp;var_1]
+00000039: 23 fb                sb                ; var_1[0] = (var_3[9] ^ (var_3[5] ^ var_3[1])) &amp; 0xff
+0000003b: 4c                   ldc #c
+0000003c: d0                   stl #0 [var_0]
+0000003d: 13                   ldlp #3 [&amp;var_3]
+0000003e: 24 f2                mint
+00000040: 54                   ldnlp #4
+00000041: 77                   ldl #7 [arg_1]
+00000042: 64 9c                call sub_0        ; in(12, MostNeg @ 4, &amp;var_3)
+                                                 ; lecture des 12 octets de clé courante
+00000044: 41                   ldc #1
+00000045: d0                   stl #0 [var_0]
+00000046: 12                   ldlp #2 [&amp;var_2]
+00000047: 24 f2                mint
+00000049: 55                   ldnlp #5
+0000004a: 77                   ldl #7 [arg_1]
+0000004b: 64 93                call sub_0       ; in(1, MostNeg @ 5, &amp;var_2)
+                                                ; lecture d'un octet depuis le transputer 11
+0000004d: 41                   ldc #1
+0000004e: d0                   stl #0 [var_0]
+0000004f: 11                   ldlp #1 [&amp;var_1]
+00000050: 24 f2                mint
+00000052: 51                   ldnlp #1
+00000053: 77                   ldl #7 [arg_1]
+00000054: 64 90                call sub_6       ; out(1, MostNeg @ 1, &amp;var_1)
+                                                ; envoi d'un octet vers le transputer 11
+00000056: 12                   ldlp #2 [&amp;var_2]
+00000057: f1                   lb
+00000058: 4c                   ldc #c
+00000059: 21 ff                rem
+0000005b: 2f 4f                ldc #ff
+0000005d: 24 f6                and
+0000005f: 12                   ldlp #2 [&amp;var_2]
+00000060: 23 fb                sb               ; var_2[0] = (var_2[0] % 12) &amp; 0xff
+00000062: 12                   ldlp #2 [&amp;var_2]
+00000063: f1                   lb
+00000064: 13                   ldlp #3 [&amp;var_3]
+00000065: f2                   bsub
+00000066: f1                   lb
+00000067: 11                   ldlp #1 [&amp;var_1]
+00000068: 23 fb                sb               ; var_1[0] = var_3[var_2[0]]
+0000006a: 41                   ldc #1
+0000006b: d0                   stl #0 [var_0]
+0000006c: 11                   ldlp #1 [&amp;var_1]
+0000006d: 24 f2                mint
+0000006f: 77                   ldl #7 [arg_1]
+00000070: 66 94                call sub_6       ; out(1, MostNeg, &amp;var_1)
+00000072: 20                   .db #20 ' '
+00000073: 65 0e                j loc_23</programlisting>
+<simpara>Le transputer 12 effectue les opérations suivantes :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>initialisation d&#8217;un état : 12 octets mis à 0 à l&#8217;adresse <literal>&amp;var_3</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara>début de la boucle infinie :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>mise à jour de la variable <literal>var_1</literal> en fonction des données de <literal>var_3</literal>,</simpara>
+</listitem>
+<listitem>
+<simpara>lecture et stockage dans <literal>var_3</literal> des 12 octets de la clé courante,</simpara>
+</listitem>
+<listitem>
+<simpara>lecture et stockage dans <literal>var_2</literal> d&#8217;un octet lu depuis le transputer 11,</simpara>
+</listitem>
+<listitem>
+<simpara>envoi du contenu de <literal>var_1</literal> vers le transputer 11,</simpara>
+</listitem>
+<listitem>
+<simpara>mise à jour de <literal>var_1</literal> selon l&#8217;opération <literal>var_1 = var_3[var_2 % 12]</literal>,</simpara>
+</listitem>
+<listitem>
+<simpara>envoi de <literal>var_1</literal> sur le lien 0 et retour au début de la boucle.</simpara>
+</listitem>
+</itemizedlist>
+</listitem>
+</itemizedlist>
+<simpara>Le pseudo-code C correspondant est :</simpara>
+<programlisting language="c" linenumbering="unnumbered">/* Transputer 12 */
+void sub_c_t12(uint32_t arg1) {
+  uint8_t var1, var2;
+  uint8_t var_3[12];
+
+  memset(var_3, 0, 12); // initialisation de l'état
+  for (;;) {
+     var_1 = var_3[9] ^ (var_3[5] ^ var_3[1]);
+     in(12, 4, var_3); // lecture de la clé courante, mise à jour de l'état
+
+     in(1, 5, &amp;var_2); // lecture d'un octet depuis le transputer 11
+     out(1, 1, &amp;var_1); // envoi d'un octet vers le transputer 11
+
+     var_1 = var_3[var_2 % 12];
+     out(1, 0, &amp;var_1); // envoi du résultat sur le lien 0
+  }
+}</programlisting>
+<simpara>Le lien entre les transputers 11 et 12 ne sert finalement qu&#8217;à échanger un octet.
+Il est donc possible de les rendre indépendant l&#8217;un de l&#8217;autre en inversant le calcul
+de la valeur échangée. La gestion de l&#8217;état faite par le transputer 12 doit également
+être transposée au niveau du transputer 11 car la valeur envoyé dépend de cet état.</simpara>
+<simpara>Le résultat en pseudo-code est alors le suivant :</simpara>
+<programlisting language="c" linenumbering="unnumbered">void sub_c_t11(uint32_t arg1) {
+   uint8_t var_1, var_2;
+   uint8_t var_3[12];
+
+   memset(var_3, 0, 12); // initialisation de l'état
+   for (;;) {
+       var_1 = var_3[9] ^ (var_3[5] ^ var_3[1]);
+       in(12, 4, var_3); // lecture de la clé courante, mise à jour de l'état
+
+       var_2 = var_3[var_1 % 12];
+       out(1, 0, &amp;var_2); // envoi du résultat sur le lien 0
+   }
+}
+
+void sub_c_t12(uint32_t arg1) {
+  uint8_t var1, var2;
+  uint8_t var_3[12];
+
+  for (;;) {
+     in(12, 4, var_3); // lecture de la clé courante
+     var_1 = var_3[7] ^ ( var_3[3] ^ var_3[0] );
+
+     var_2 = var_3[var_1 % 12];
+     out(1, 0, &amp;var_2); // envoi du résultat sur le lien 0
+  }
+}</programlisting>
+<simpara>Cette implémentation des transputers 11 et 12 est équivalente à celle obtenue précédemment
+mais les deux transputers sont cette fois indépendants.</simpara>
+<simpara>La fonction de chaque transputer étant maintenant connue, il reste alors à implémenter
+la routine de déchiffrement.</simpara>
+</section>
+</section>
+<section xml:id="_implémentation_de_l_algorithme">
+<title>Implémentation de l&#8217;algorithme</title>
+<simpara>L&#8217;objectif à cet stade est de produire une implémentation de l&#8217;algorithme qui passe le
+vecteur de test fourni dans le schéma, à savoir :</simpara>
+<screen>Test vector:
+key = “*SSTIC-2015*”
+data = “1d87c4c4e0ee40383c59447f23798d9fefe74fb82480766e”.decode(“hex”)
+decrypt(key, data) == “I love ST20 architecture”</screen>
+<simpara>Plusieurs difficultés se présentent lors de la conception du programme :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>les transputers communiquent entre eux avec des instructions <literal>in</literal> et <literal>out</literal> ;</simpara>
+</listitem>
+<listitem>
+<simpara>la plupart des transputers initialisent et maintiennent un état entre chaque itération.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>Il est assez facile de résoudre le premier point. En effet, on peut remarquer que les communications
+entre deux transputers suivent toujours le même schéma : un envoi de 12 octets suivi d&#8217;une lecture d&#8217;un octet.
+Ces communications peuvent donc être remplacées par un appel de fonction qui prendrait en paramètre
+un chaîne de 12 octets et retournerait un octet comme résultat. Chacune de ces fonctions représenterait donc
+une itération d&#8217;un transputer.</simpara>
+<simpara>Au niveau de la gestion des états, trois possibilités existent :</simpara>
+<itemizedlist>
+<listitem>
+<simpara>un état d&#8217;un transputer peut être représenté par des variables statiques déclarées dans le corps de la fonction.
+Une de ces variables précise si le transputer est initialisé ou non. Dans ce dernier cas, la fonction initialise l&#8217;état
+avant de procéder l&#8217;itération ;</simpara>
+</listitem>
+<listitem>
+<simpara>plutôt que des variables statiques, il est possible de déclarer des variables globales qui peuvent être modifiées en dehors
+de la fonction correspondant au transputer (par exemple pour définir une fonction d&#8217;initialisation globale) ;</simpara>
+</listitem>
+<listitem>
+<simpara>enfin, les états des transputers peuvent être déclarés au sein d&#8217;une même structure qui sera passée en paramètre des fonctions. Cette structure
+sera initialisée par une fonction principale avant de passer la main au transputer 0.</simpara>
+</listitem>
+</itemizedlist>
+<simpara>La dernière possibilité est celle qui a été retenue : elle présente l&#8217;avantage d&#8217;être thread-safe.</simpara>
+<simpara>La structure correspondante est définie ainsi :</simpara>
+<programlisting language="c" linenumbering="unnumbered">typedef struct tr_ctx {
+    uint8_t t4_st;
+    uint8_t t5_st;
+    uint16_t t6_st;
+    uint8_t t8_idx;
+    uint8_t t8_st[4][12];
+    uint8_t t10_idx;
+    uint8_t t10_st[4][12];
+    uint8_t t12_st[12];
+} tr_ctx_t;</programlisting>
+<simpara>Elle est initialisée simplement par la fonction ci-dessous :</simpara>
+<programlisting language="c" linenumbering="unnumbered">void init_ctx(tr_ctx_t * ctx, const uint8_t * key) {
+    int i;
+
+    memset(ctx, 0, sizeof(struct tr_ctx));
+
+    /* t6 init */
+    for (i = 0; i &lt; 12; i++)
+        ctx-&gt;t6_st = (ctx-&gt;t6_st + key[i]) &amp; 0xffff;
+}</programlisting>
+<simpara>La fonction correspondant au transputer 0 devient alors :</simpara>
+<programlisting language="c" linenumbering="unnumbered">void transputer_0(const char *key, const char *cipher, int cipher_len, char *plain, tr_ctx_t * ctx) {
+    uint8_t current_key[12];
+    int i;
+    uint8_t t1_res, t2_res, t3_res;
+
+    memcpy(current_key, key, 12);
+
+    for (i = 0; i &lt; cipher_len; i++) {
+        t1_res = transputer_1(current_key, ctx);
+        t2_res = transputer_2(current_key, ctx);
+        t3_res = transputer_3(current_key, ctx);
+
+#if DEBUG
+        printf("[T0] T1 : 0x%2.2x T2 : 0x%2.2x T3 : 0x%2.2x\n", t1_res, t2_res, t3_res);
+#endif
+
+        plain[i] = cipher[i] ^ (2 * current_key[i % 12] + i % 12);
+
+        current_key[i % 12] = (t1_res ^ t2_res) ^ t3_res;
+    }
+}</programlisting>
+<simpara>La fonction correspondant à un transputer de second niveau (1, 2 ou 3) est présentée ci-dessous :</simpara>
+<programlisting language="c" linenumbering="unnumbered">uint8_t transputer_1(const uint8_t * key, tr_ctx_t * ctx) {
+    uint8_t a, b, c;
+
+    a = transputer_4(key, ctx);
+    b = transputer_5(key, ctx);
+    c = transputer_6(key, ctx);
+#if DEBUG
+    printf("[T1] T4 : 0x%2.2x T5 : 0x%2.2x T6 : 0x%2.2x\n", a, b, c);
+#endif
+
+    return (a ^ b) ^ c;
+}</programlisting>
+<simpara>Enfin, un exemple de fonction correspondant à un transputer de troisième niveau est :</simpara>
+<programlisting language="c" linenumbering="unnumbered">uint8_t transputer_4(const uint8_t * key, tr_ctx_t * ctx) {
+    int i;
+
+    for (i = 0; i &lt; 12; i++)
+        ctx-&gt;t4_st += key[i];
+
+    return ctx-&gt;t4_st;
+}</programlisting>
+<simpara>La fonction principale pour lancer un déchiffrement correspond au code ci-dessous :</simpara>
+<programlisting language="c" linenumbering="unnumbered">void init_ctx(tr_ctx_t * ctx, const uint8_t * key) {
+    int i;
+
+    memset(ctx, 0, sizeof(struct tr_ctx));
+
+    /* t6 init */
+    for (i = 0; i &lt; 12; i++)
+        ctx-&gt;t6_st = (ctx-&gt;t6_st + key[i]) &amp; 0xffff;
+}</programlisting>
+<simpara>Il ne reste plus maintenant qu&#8217;à tester cette implémentation. Pour cela,
+l&#8217;émulateur <link xlink:href="http://sourceforge.net/projects/st20emu">st20emu</link> est utilisé
+pour vérifier que le résultat de chaque transputer est cohérent avec
+une trace d&#8217;exécution obtenue par émulation.</simpara>
+<simpara>Par exemple, le résultat des transputers de 7 à 12 avec pour la clé <literal>*SSTIC-2015*</literal> est :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ ./decrypt
+[T1] T4 : 0xcf T5 : 0x75 T6 : 0x9e
+[T2] T7 : 0xaf T8 : 0xcf T9 : 0x06
+[T3] T10: 0x00 T11: 0x2a T12: 0x49
+[T0] T1 : 0x24 T2 : 0x66 T3 : 0x63
+[...]</programlisting>
+<simpara>On peut alors charger dans l&#8217;émulateur le code du transputer 4 (fichier <literal>t4_code_gcall.bin</literal>)
+et vérifier que le résultat (<literal>0xcf</literal>) est identique. L&#8217;émulateur ne supportant pas l&#8217;instruction <literal>in</literal>,
+il faut donc simuler le chargement de la clé en affectant les variables <literal>var_2</literal>, <literal>var_3</literal> et <literal>var_3</literal>
+à la main (voir <xref linkend="_t4_code_gcall"/> à l&#8217;adresse <literal>0x1b</literal>). La trace de l&#8217;émulateur est présentée ci-dessous :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ wine st20emu.exe
+Cannot open INI file ST20EMU.INI
+Using program defaults
+MAX_UNPROMPTED_INSTR=1000000
+WARN_UNPROMPTED_INSTR=100000
+UNDEFINED_WORD=0xaaaaaaaa
+START_ADDR=0x7ffffffe
+MEM_START_VAL=0x80000140
+ST20_PRODUCT_ID=0x2d4c9041
+TIMER_GUESS=0x20000000
+WPTR_END_ADDR=0x1fffffff
+
+A=0xaaaaaaaa B=0xaaaaaaaa C=0xaaaaaaaa  Iptr=0x7ffffffe
+Wptr  0=0xaaaaaaaa
+
+An uninitialized memory byte was accessed
+Error occurred when reading instruction at 7ffffffe, offset  0
+7ffffffe   j loc_7ffffffe
+&gt; l 7ff80000 t4_code_gcall.bin <co xml:id="CO5-1"/>
+Read 68 bytes from t4_code_gcall.bin
+&gt; i 7ff8000c <co xml:id="CO5-2"/>
+&gt; s i 7ff8001d <co xml:id="CO5-3"/>
+&gt; g
+ERROR: Invalid Wptr word referenced
+This instruction (in) has not been implemented yet
+Watch condition encountered
+A=0x0000000c B=0x80000010 C=0x1ffffff0  Iptr=0x7ff8001d
+Wptr  0=0x0000000c  1=0x00000000  2=0xaaaaaaaa  3=0xaaaaaaaa
+      4=0xaaaaaaaa  5=0xaaaaaaaa
+
+7ff8001d  40  ldc 0
+&gt; w 2 5453532a <co xml:id="CO5-4"/>
+&gt; w 3 322d4349 <co xml:id="CO5-5"/>
+&gt; w 4 2a353130 <co xml:id="CO5-6"/>
+&gt; s i 7ff8003c <co xml:id="CO5-7"/>
+&gt; g
+ERROR: Invalid Wptr word referenced
+Watch condition encountered
+A=0x00000000 B=0x80000000 C=0x1fffffec  Iptr=0x7ff8003c
+Wptr  0=0x00000001  1=0x000000cf  2=0x5453532a  3=0x322d4349 <co xml:id="CO5-8"/>
+      4=0x2a353130  5=0xaaaaaaaa
+
+7ff8003c  63 98  call sub_7ff80006</programlisting>
+<calloutlist>
+<callout arearefs="CO5-1">
+<para>charge le code du transputer</para>
+</callout>
+<callout arearefs="CO5-2">
+<para>règle le point d&#8217;entrée</para>
+</callout>
+<callout arearefs="CO5-3">
+<para>place un point d&#8217;arrêt après la lecture de la clé</para>
+</callout>
+<callout arearefs="CO5-4">
+<para><literal>TSS*</literal> dans var_2</para>
+</callout>
+<callout arearefs="CO5-5">
+<para><literal>2-CI</literal> dans var_3</para>
+</callout>
+<callout arearefs="CO5-6">
+<para><literal>*510</literal> dans var_4</para>
+</callout>
+<callout arearefs="CO5-7">
+<para>place un point d&#8217;arrêt avant l&#8217;envoi du résultat</para>
+</callout>
+<callout arearefs="CO5-8">
+<para>résultat dans var_1</para>
+</callout>
+</calloutlist>
+<simpara>Le résultat est bien <literal>0xcf</literal> dans les deux cas. De la même manière,
+il est possible de valider individuellement l&#8217;implémentation de chaque transputer.</simpara>
+<simpara>Une fois chaque transputer validé, on peut alors essayer de passer le vecteur de test.</simpara>
+<simpara>La fonction ci-dessous implémente ce test :</simpara>
+<programlisting language="c" linenumbering="unnumbered">int self_test(int count) {
+    int ret = 0, i;
+    char *key = "*SSTIC-2015*";
+    char *cipher = "\x1d\x87\xc4\xc4\xe0\xee\x40\x38\x3c\x59\x44\x7f\x23\x79\x8d\x9f\xef\xe7\x4f\xb8\x24\x80\x76\x6e";
+    char plain[24];
+    int data_size = 24;
+
+    for (i = 0; i &lt; count &amp;&amp; ret == 0; i++) {
+        decipher(key, cipher, plain, data_size);
+        ret = strncmp("I love ST20 architecture", plain, data_size);
+    }
+
+    return ret;
+}
+
+int main(int argc, char **argv) {
+    if (self_test(2) != 0) {
+        fprintf(stderr, "self-test failed\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("[+] self-test passed\n");
+
+    return EXIT_SUCCESS;
+}</programlisting>
+<simpara>Il est recommandé d&#8217;effectuer le test plusieurs fois de suite pour s&#8217;assurer que la réinitialisation
+des transputers est correcte. Le résultat est le suivant :</simpara>
+<programlisting language="console" linenumbering="unnumbered">$ make decrypt
+gcc -O3 -march=native -fomit-frame-pointer -funroll-loops -Wall -D_STANDALONE_ -o decrypt decrypt.c
+$ ./decrypt
+[T1] T4 : 0xcf T5 : 0x75 T6 : 0x9e
+[T2] T7 : 0xaf T8 : 0xcf T9 : 0x06
+[T3] T10: 0x00 T11: 0x2a T12: 0x49
+[T0] T1 : 0x24 T2 : 0x66 T3 : 0x63
+[...]
+[+] self-test passed</programlisting>
+<simpara>On dispose alors à ce stade d&#8217;une implémentation supposée correcte (fichier <xref linkend="_decrypt_c"/> en annexe)
+de la routine de déchiffrement.</simpara>
+</section>
+<section xml:id="_attaque_par_force_brute">
+<title>Attaque par force brute</title>
+<simpara>Il reste maintenant à déterminer la clé valide permettant de déchiffrer les données
+embarquées dans le fichier <literal>input.bin</literal>. La démarche initiale est alors la suivante :</simpara>
+<itemizedlist>
 <listitem>
 <simpara>déterminer une liste de clés candidates et, pour chacune, :</simpara>
 <itemizedlist>
@@ -1282,25 +3014,29 @@ finish:
         if (plain_data)
                 free(plain_data);
 }</programlisting>
-<simpara>Une version améliorée, disponible en annexe (<xref linkend="_recode_c"/>), utilise OpenMP pour
+<simpara>Une version améliorée, disponible en annexe (<xref linkend="_bf_c"/>), utilise OpenMP pour
 paralléliser les calculs et permet de retrouver la clé valide en l&#8217;espace d&#8217;une minute :</simpara>
-<programlisting language="console" linenumbering="unnumbered">$ make clean &amp;&amp; make recode
-rm recode keys.h
+<programlisting language="console" linenumbering="unnumbered">$ make bf
 ./find-key.rb &gt; keys.h
-gcc -O3 -march=native -fomit-frame-pointer -fopenmp -funroll-loops -Wall -o recode recode.c -lcrypto
-$ dd if=input.bin bs=1 skip=$((0x9ad)) count=$((0x3dc9a-0x9ad+1)) of=encrypted.bin
-250606+0 records in
-250606+0 records out
-250606 bytes (251 kB) copied, 0.333976 s, 750 kB/s
+gcc -c -O3 -march=native -fomit-frame-pointer -funroll-loops -Wall -fopenmp -o bf.o bf.c
+gcc -c -O3 -march=native -fomit-frame-pointer -funroll-loops -Wall -o decrypt.o decrypt.c
+gcc -O3 -march=native -fomit-frame-pointer -funroll-loops -Wall -fopenmp -o bf bf.o decrypt.o -lcrypto
+$ dd if=input_remaining.bin bs=1 skip=40 of=encrypted.bin <co xml:id="CO6-1"/>
 $ sha256sum encrypted.bin
 a5790b4427bc13e4f4e9f524c684809ce96cd2f724e29d94dc999ec25e166a81  encrypted.bin
-$ ./recode encrypted.bin
+$ ./bf encrypted.bin
 [+] self-test passed
 [+] starting 4 threads
 [+] testing 5120 keys
 [!] key = 5ed49b7156fce47de976dac5
 [+] result saved in congratulations.tar.bz2</programlisting>
-<simpara>La clé a finalement été identifée (<literal>5ed49b7156fce47de976dac5</literal>) et le résultat est sauvegardé dans le fichier
+<calloutlist>
+<callout arearefs="CO6-1">
+<para><literal>input_remaining</literal> est obtenu à l&#8217;aide du script <xref linkend="_split_rb"/> depuis le fichier <literal>input.bin</literal>, 40 est le décalage
+jusqu&#8217;aux données chiffrées</para>
+</callout>
+</calloutlist>
+<simpara>La clé a finalement été identifiée (<literal>5ed49b7156fce47de976dac5</literal>) et le résultat est sauvegardé dans le fichier
 <literal>congratulations.tar.bz2</literal>.</simpara>
 </section>
 </section>
@@ -1550,9 +3286,7 @@ l&#8217;adresse de validation qui est : <literal>1713e7c1d0b750ccd4e002bb957aa79
 </section>
 <section xml:id="_conclusion">
 <title>Conclusion</title>
-<warning>
-<simpara>à rédiger</simpara>
-</warning>
+
 </section>
 <section xml:id="_annexes">
 <title>Annexes</title>
@@ -1704,183 +3438,513 @@ console.log(new_code);</programlisting>
 <formalpara xml:id="_t0_asm">
 <title>t0.asm</title>
 <para>
-<screen>; New subroutine 0+d; References: 0, Local Vars: 76
-00000000: 64 b4     sub_0:        ajw #-4c         ; adjust workspace - Move workspace pointer
-00000002: 40                      ldc #0           ; load constant - A = n, B=A, C=B
-00000003: d1                      stl #1 [var_1]   ; store local - workspace[n] = A, A=B, B=C
-00000004: 40                      ldc #0           ; load constant - A = n, B=A, C=B
-00000005: d3                      stl #3 [var_3]   ; store local - workspace[n] = A, A=B, B=C
-00000006: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000008: 24 20 50                ldnlp #400       ; load non-local pointer - A = &amp;A[n]
-0000000b: 23 fc                   gajw             ; general adjust workspace - Wptr &lt;=&gt; A
+<programlisting language="st20" linenumbering="unnumbered">; New subroutine 0+d; References: 0, Local Vars: 76
+00000000: 64 b4     sub_0:        ajw #-4c       ; réserve 76 variables locales
+00000002: 40                      ldc #0
+00000003: d1                      stl #1 [var_1] ; var_1 = 0
+00000004: 40                      ldc #0
+00000005: d3                      stl #3 [var_3] ; var_3 = 0
+00000006: 24 f2                   mint           ; A = MostNeg
+00000008: 24 20 50                ldnlp #400     ; A = MostNeg @ 0x400
+0000000b: 23 fc                   gajw           ; Wptr = MostNeg @ 0x400
 
 ; New subroutine d+eb; References: 0, Local Vars: 76
-0000000d: 64 b4     sub_d:        ajw #-4c         ; adjust workspace - Move workspace pointer
-0000000f: 2c 49                   ldc #c9          ; load constant - A = n, B=A, C=B
-00000011: 21 fb                   ldpi [str_dc]    ; Load pointer to instruction - A = next instruction + A
-00000013: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000015: 48                      ldc #8           ; load constant - A = n, B=A, C=B
-00000016: fb                      out              ; output message - A bytes to channel B from address C
-00000017: 24 19     loc_17:       ldlp #49 [&amp;var_73]   ; load local pointer - A = &amp;workspace[n], B=A, C=B
-00000019: 24 f2                   mint             ; minimum integer - A = MostNeg
-0000001b: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
-0000001c: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
-0000001d: f7                      in               ; input message - Read A bytes from channel B to addr C
-0000001e: 24 79                   ldl #49 [var_73]  ; load local - A = workspace[n], B=A, C=B
-00000020: 21 a5                   cj loc_37        ; conditional jump - jump if A = 0
-00000022: 2c 4d                   ldc #cd          ; load constant - A = n, B=A, C=B
-00000024: 21 fb                   ldpi [loc_f3]    ; Load pointer to instruction - A = next instruction + A
-00000026: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000028: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
-00000029: 24 79                   ldl #49 [var_73]  ; load local - A = workspace[n], B=A, C=B
-0000002b: f7                      in               ; input message - Read A bytes from channel B to addr C
-0000002c: 2c 43                   ldc #c3          ; load constant - A = n, B=A, C=B
-0000002e: 21 fb                   ldpi [loc_f3]    ; Load pointer to instruction - A = next instruction + A
-00000030: 24 7a                   ldl #4a [var_74]  ; load local - A = workspace[n], B=A, C=B
-00000032: 24 79                   ldl #49 [var_73]  ; load local - A = workspace[n], B=A, C=B
-00000034: fb                      out              ; output message - A bytes to channel B from address C
-00000035: 61 00                   j loc_17         ; jump - Unconditional relative jump
-00000037: 24 19     loc_37:       ldlp #49 [&amp;var_73]   ; load local pointer - A = &amp;workspace[n], B=A, C=B
-00000039: 24 f2                   mint             ; minimum integer - A = MostNeg
-0000003b: 51                      ldnlp #1         ; load non-local pointer - A = &amp;A[n]
-0000003c: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
-0000003d: fb                      out              ; output message - A bytes to channel B from address C
-0000003e: 24 19                   ldlp #49 [&amp;var_73]   ; load local pointer - A = &amp;workspace[n], B=A, C=B
-00000040: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000042: 52                      ldnlp #2         ; load non-local pointer - A = &amp;A[n]
-00000043: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
-00000044: fb                      out              ; output message - A bytes to channel B from address C
-00000045: 24 19                   ldlp #49 [&amp;var_73]   ; load local pointer - A = &amp;workspace[n], B=A, C=B
-00000047: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000049: 53                      ldnlp #3         ; load non-local pointer - A = &amp;A[n]
-0000004a: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
-0000004b: fb                      out              ; output message - A bytes to channel B from address C
-0000004c: 29 44                   ldc #94          ; load constant - A = n, B=A, C=B
-0000004e: 21 fb                   ldpi [str_e4]    ; Load pointer to instruction - A = next instruction + A
-00000050: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000052: 48                      ldc #8           ; load constant - A = n, B=A, C=B
-00000053: fb                      out              ; output message - A bytes to channel B from address C
-00000054: 12                      ldlp #2 [&amp;var_2]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-00000055: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000057: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
-00000058: 44                      ldc #4           ; load constant - A = n, B=A, C=B
-00000059: f7                      in               ; input message - Read A bytes from channel B to addr C
-0000005a: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-0000005b: 24 f2                   mint             ; minimum integer - A = MostNeg
-0000005d: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
-0000005e: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
-0000005f: f7                      in               ; input message - Read A bytes from channel B to addr C
-00000060: 28 48                   ldc #88          ; load constant - A = n, B=A, C=B
-00000062: 21 fb                   ldpi [str_ec]    ; Load pointer to instruction - A = next instruction + A
-00000064: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000066: 48                      ldc #8           ; load constant - A = n, B=A, C=B
-00000067: fb                      out              ; output message - A bytes to channel B from address C
-00000068: 13                      ldlp #3 [&amp;var_3]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-00000069: 24 f2                   mint             ; minimum integer - A = MostNeg
-0000006b: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
-0000006c: 41                      ldc #1           ; load constant - A = n, B=A, C=B
-0000006d: f7                      in               ; input message - Read A bytes from channel B to addr C
-0000006e: 19                      ldlp #9 [&amp;var_9]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-0000006f: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000071: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
-00000072: 13                      ldlp #3 [&amp;var_3]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-00000073: f1                      lb               ; load byte - Load byte addressed by A into A
-00000074: f7                      in               ; input message - Read A bytes from channel B to addr C
-00000075: 40                      ldc #0           ; load constant - A = n, B=A, C=B
-00000076: d4                      stl #4 [var_4]   ; store local - workspace[n] = A, A=B, B=C
-00000077: 11        loc_77:       ldlp #1 [&amp;var_1]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-00000078: 24 f2                   mint             ; minimum integer - A = MostNeg
-0000007a: 54                      ldnlp #4         ; load non-local pointer - A = &amp;A[n]
-0000007b: 41                      ldc #1           ; load constant - A = n, B=A, C=B
-0000007c: f7                      in               ; input message - Read A bytes from channel B to addr C
-0000007d: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-0000007e: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000080: 51                      ldnlp #1         ; load non-local pointer - A = &amp;A[n]
-00000081: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
-00000082: fb                      out              ; output message - A bytes to channel B from address C
-00000083: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-00000084: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000086: 52                      ldnlp #2         ; load non-local pointer - A = &amp;A[n]
-00000087: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
-00000088: fb                      out              ; output message - A bytes to channel B from address C
-00000089: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-0000008a: 24 f2                   mint             ; minimum integer - A = MostNeg
-0000008c: 53                      ldnlp #3         ; load non-local pointer - A = &amp;A[n]
-0000008d: 4c                      ldc #c           ; load constant - A = n, B=A, C=B
-0000008e: fb                      out              ; output message - A bytes to channel B from address C
-0000008f: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-00000090: 81                      adc #1           ; add constant - Add to A with carry check
-00000091: 24 f2                   mint             ; minimum integer - A = MostNeg
-00000093: 55                      ldnlp #5         ; load non-local pointer - A = &amp;A[n]
-00000094: 41                      ldc #1           ; load constant - A = n, B=A, C=B
-00000095: f7                      in               ; input message - Read A bytes from channel B to addr C
-00000096: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-00000097: 82                      adc #2           ; add constant - Add to A with carry check
-00000098: 24 f2                   mint             ; minimum integer - A = MostNeg
-0000009a: 56                      ldnlp #6         ; load non-local pointer - A = &amp;A[n]
-0000009b: 41                      ldc #1           ; load constant - A = n, B=A, C=B
-0000009c: f7                      in               ; input message - Read A bytes from channel B to addr C
-0000009d: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-0000009e: 83                      adc #3           ; add constant - Add to A with carry check
-0000009f: 24 f2                   mint             ; minimum integer - A = MostNeg
-000000a1: 57                      ldnlp #7         ; load non-local pointer - A = &amp;A[n]
-000000a2: 41                      ldc #1           ; load constant - A = n, B=A, C=B
-000000a3: f7                      in               ; input message - Read A bytes from channel B to addr C
-000000a4: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-000000a5: 81                      adc #1           ; add constant - Add to A with carry check
-000000a6: f1                      lb               ; load byte - Load byte addressed by A into A
-000000a7: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-000000a8: 82                      adc #2           ; add constant - Add to A with carry check
-000000a9: f1                      lb               ; load byte - Load byte addressed by A into A
-000000aa: 23 f3                   xor              ; exclusive or - A = A^B, B=C
-000000ac: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-000000ad: 83                      adc #3           ; add constant - Add to A with carry check
-000000ae: f1                      lb               ; load byte - Load byte addressed by A into A
-000000af: 23 f3                   xor              ; exclusive or - A = A^B, B=C
-000000b1: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-000000b2: 81                      adc #1           ; add constant - Add to A with carry check
-000000b3: 23 fb                   sb               ; store byte - *A = B &amp; 0xff
-000000b5: 11                      ldlp #1 [&amp;var_1]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-000000b6: f1                      lb               ; load byte - Load byte addressed by A into A
-000000b7: 74                      ldl #4 [var_4]   ; load local - A = workspace[n], B=A, C=B
-000000b8: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-000000b9: f2                      bsub             ; Byte subscript - A = A + B
-000000ba: f1                      lb               ; load byte - Load byte addressed by A into A
-000000bb: 74                      ldl #4 [var_4]   ; load local - A = workspace[n], B=A, C=B
-000000bc: 2c f1                   ssub             ; sixteen subscript - A = A + 2B
-000000be: 23 f3                   xor              ; exclusive or - A = A^B, B=C
-000000c0: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-000000c1: 23 fb                   sb               ; store byte - *A = B &amp; 0xff
-000000c3: 10                      ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-000000c4: 81                      adc #1           ; add constant - Add to A with carry check
-000000c5: f1                      lb               ; load byte - Load byte addressed by A into A
-000000c6: 74                      ldl #4 [var_4]   ; load local - A = workspace[n], B=A, C=B
-000000c7: 15                      ldlp #5 [&amp;var_5]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-000000c8: f2                      bsub             ; Byte subscript - A = A + B
-000000c9: 23 fb                   sb               ; store byte - *A = B &amp; 0xff
-000000cb: 74                      ldl #4 [var_4]   ; load local - A = workspace[n], B=A, C=B
-000000cc: 81                      adc #1           ; add constant - Add to A with carry check
-000000cd: 25 fa                   dup              ; duplicate top of stack
-000000cf: d4                      stl #4 [var_4]   ; store local - workspace[n] = A, A=B, B=C
-000000d0: cc                      eqc #c           ; equals constant - A = (A == Constant)
-000000d1: a3                      cj loc_d5        ; conditional jump - jump if A = 0
-000000d2: 80                      adc #0           ; add constant - Add to A with carry check
-000000d3: 40                      ldc #0           ; load constant - A = n, B=A, C=B
-000000d4: d4                      stl #4 [var_4]   ; store local - workspace[n] = A, A=B, B=C
-000000d5: 10        loc_d5:       ldlp #0 [&amp;var_0]  ; load local pointer - A = &amp;workspace[n], B=A, C=B
-000000d6: 24 f2                   mint             ; minimum integer - A = MostNeg
-000000d8: 41                      ldc #1           ; load constant - A = n, B=A, C=B
-000000d9: fb                      out              ; output message - A bytes to channel B from address C
-000000da: 66 0b                   j loc_77         ; jump - Unconditional relative jump
+0000000d: 64 b4     sub_d:        ajw #-4c           ; réserve 76 variables locales
+0000000f: 2c 49                   ldc #c9
+00000011: 21 fb                   ldpi [str_dc]
+00000013: 24 f2                   mint
+00000015: 48                      ldc #8
+00000016: fb                      out                ; out(8, MostNeg, "Boot ok")
+00000017: 24 19     loc_17:       ldlp #49 [&amp;var_73]
+00000019: 24 f2                   mint
+0000001b: 54                      ldnlp #4
+0000001c: 4c                      ldc #c
+0000001d: f7                      in                ; in(12, MostNeg @ 4, &amp;var_73)
+0000001e: 24 79                   ldl #49 [var_73]
+00000020: 21 a5                   cj loc_37         ; saute à loc_37 si var_73 == 0
+00000022: 2c 4d                   ldc #cd
+00000024: 21 fb                   ldpi [loc_f3]
+00000026: 24 f2                   mint
+00000028: 54                      ldnlp #4
+00000029: 24 79                   ldl #49 [var_73]
+0000002b: f7                      in                ; in(var_73, MostNeg @ 4, loc_f3)
+0000002c: 2c 43                   ldc #c3
+0000002e: 21 fb                   ldpi [loc_f3]
+00000030: 24 7a                   ldl #4a [var_74]
+00000032: 24 79                   ldl #49 [var_73]
+00000034: fb                      out               ; out(var_73, var_74, loc_f3)
+00000035: 61 00                   j loc_17
+00000037: 24 19     loc_37:       ldlp #49 [&amp;var_73]
+00000039: 24 f2                   mint
+0000003b: 51                      ldnlp #1
+0000003c: 4c                      ldc #c
+0000003d: fb                      out               ; out(12, MostNeg @ 1, &amp;var_73)
+0000003e: 24 19                   ldlp #49 [&amp;var_73]
+00000040: 24 f2                   mint
+00000042: 52                      ldnlp #2
+00000043: 4c                      ldc #c
+00000044: fb                      out                ; out(12, MostNeg @ 2, &amp;var_73)
+00000045: 24 19                   ldlp #49 [&amp;var_73]
+00000047: 24 f2                   mint
+00000049: 53                      ldnlp #3
+0000004a: 4c                      ldc #c
+0000004b: fb                      out                ; out(12, MostNeg @ 3, &amp;var_73)
+0000004c: 29 44                   ldc #94
+0000004e: 21 fb                   ldpi [str_e4]
+00000050: 24 f2                   mint
+00000052: 48                      ldc #8
+00000053: fb                      out                ; out(8, MostNeg, "Code Ok")
+00000054: 12                      ldlp #2 [&amp;var_2]
+00000055: 24 f2                   mint
+00000057: 54                      ldnlp #4
+00000058: 44                      ldc #4
+00000059: f7                      in                 ; in(4, MostNeg @ 4, &amp;var_2)
+0000005a: 15                      ldlp #5 [&amp;var_5]
+0000005b: 24 f2                   mint
+0000005d: 54                      ldnlp #4
+0000005e: 4c                      ldc #c
+0000005f: f7                      in                 ; in(12, MostNeg @ 4, &amp;var_5)
+00000060: 28 48                   ldc #88
+00000062: 21 fb                   ldpi [str_ec]
+00000064: 24 f2                   mint
+00000066: 48                      ldc #8
+00000067: fb                      out                ; out(8, MostNeg, "Decrypt")
+00000068: 13                      ldlp #3 [&amp;var_3]
+00000069: 24 f2                   mint
+0000006b: 54                      ldnlp #4
+0000006c: 41                      ldc #1
+0000006d: f7                      in                 ; in(1, MostNeg @ 4, &amp;var_3)
+0000006e: 19                      ldlp #9 [&amp;var_9]
+0000006f: 24 f2                   mint
+00000071: 54                      ldnlp #4
+00000072: 13                      ldlp #3 [&amp;var_3]
+00000073: f1                      lb
+00000074: f7                      in                ; in(*var3, MostNeg @ 4, &amp;var_9)
+00000075: 40                      ldc #0
+00000076: d4                      stl #4 [var_4]    ; var_4 = 0
+00000077: 11        loc_77:       ldlp #1 [&amp;var_1]
+00000078: 24 f2                   mint
+0000007a: 54                      ldnlp #4
+0000007b: 41                      ldc #1
+0000007c: f7                      in                ; in(1, MostNeg @ 4, &amp;var_1)
+0000007d: 15                      ldlp #5 [&amp;var_5]
+0000007e: 24 f2                   mint
+00000080: 51                      ldnlp #1
+00000081: 4c                      ldc #c
+00000082: fb                      out               ; out(12, MostNeg @ 1, &amp;var_5)
+00000083: 15                      ldlp #5 [&amp;var_5]
+00000084: 24 f2                   mint
+00000086: 52                      ldnlp #2
+00000087: 4c                      ldc #c
+00000088: fb                      out               ; out(12, MostNeg @ 2, &amp;var_5)
+00000089: 15                      ldlp #5 [&amp;var_5]
+0000008a: 24 f2                   mint
+0000008c: 53                      ldnlp #3
+0000008d: 4c                      ldc #c
+0000008e: fb                      out               ; out(12, MostNeg @ 3, &amp;var_5)
+0000008f: 10                      ldlp #0 [&amp;var_0]
+00000090: 81                      adc #1
+00000091: 24 f2                   mint
+00000093: 55                      ldnlp #5
+00000094: 41                      ldc #1
+00000095: f7                      in                ; in(1, MostNeg @ 5, &amp;var_0 + 1)
+00000096: 10                      ldlp #0 [&amp;var_0]
+00000097: 82                      adc #2
+00000098: 24 f2                   mint
+0000009a: 56                      ldnlp #6
+0000009b: 41                      ldc #1
+0000009c: f7                      in                ; in(1, MostNeg @ 6, &amp;var_0 + 2)
+0000009d: 10                      ldlp #0 [&amp;var_0]
+0000009e: 83                      adc #3
+0000009f: 24 f2                   mint
+000000a1: 57                      ldnlp #7
+000000a2: 41                      ldc #1
+000000a3: f7                      in                ; in(1, MostNeg @ 7, &amp;var_0 + 3)
+000000a4: 10                      ldlp #0 [&amp;var_0]
+000000a5: 81                      adc #1
+000000a6: f1                      lb
+000000a7: 10                      ldlp #0 [&amp;var_0]
+000000a8: 82                      adc #2
+000000a9: f1                      lb
+000000aa: 23 f3                   xor               ; A = var_0[2] ^ var_0[1]
+000000ac: 10                      ldlp #0 [&amp;var_0]
+000000ad: 83                      adc #3
+000000ae: f1                      lb
+000000af: 23 f3                   xor               ; A = var_0[3] ^ ( var_0[2] ^ var_0[1] )
+000000b1: 10                      ldlp #0 [&amp;var_0]
+000000b2: 81                      adc #1
+000000b3: 23 fb                   sb                ; var_0[1] = var_0[3] ^ ( var_0[2] ^ var_0[1] )
+000000b5: 11                      ldlp #1 [&amp;var_1]
+000000b6: f1                      lb                ; A = var_1
+000000b7: 74                      ldl #4 [var_4]    ; A = var_4, B = var_1
+000000b8: 15                      ldlp #5 [&amp;var_5]  ; A = &amp;var_5, B = var_4, C = var_1
+000000b9: f2                      bsub              ; A = &amp;var_5 + var_4, B = var_1
+000000ba: f1                      lb                ; A = var_5[var_4], B = var_1
+000000bb: 74                      ldl #4 [var_4]    ; A = var_4, B = var_5[var_4], C = var_1
+000000bc: 2c f1                   ssub              ; A = var_4 + 2 * var_5[var_4], B = var_1
+000000be: 23 f3                   xor               ; A = (var_4 + 2 * var_5[var_4]) ^ var_1
+000000c0: 10                      ldlp #0 [&amp;var_0]
+000000c1: 23 fb                   sb                ; var_0[0] = (var_4 + 2 * var_5[var_4]) ^ var_1
+000000c3: 10                      ldlp #0 [&amp;var_0]
+000000c4: 81                      adc #1
+000000c5: f1                      lb                ; A = var_0[1]
+000000c6: 74                      ldl #4 [var_4]
+000000c7: 15                      ldlp #5 [&amp;var_5]
+000000c8: f2                      bsub              ; A = &amp;var_5 + var_4, B = var_0[1]
+000000c9: 23 fb                   sb                ; var_5[var_4] = var_0[1]
+000000cb: 74                      ldl #4 [var_4]
+000000cc: 81                      adc #1
+000000cd: 25 fa                   dup               ; A = var_4 + 1, B = var_4 + 1
+000000cf: d4                      stl #4 [var_4]    ; var_4 var_4 + 1, A = var_4 + 1
+000000d0: cc                      eqc #c
+000000d1: a3                      cj loc_d5         ; saute à loc_d5 si var_4 != 12
+000000d2: 80                      adc #0
+000000d3: 40                      ldc #0
+000000d4: d4                      stl #4 [var_4]    ; var_4 = 0
+000000d5: 10        loc_d5:       ldlp #0 [&amp;var_0]
+000000d6: 24 f2                   mint
+000000d8: 41                      ldc #1
+000000d9: fb                      out               ; out(1, MostNeg, &amp;var_0)
+000000da: 66 0b                   j loc_77          ; saute à loc_77
 000000dc: **        str_dc:      .string "Boot ok"
 000000e4: **        str_e4:      .string "Code Ok"
 000000ec: **        str_ec:      .string "Decrypt"
-000000f4: 24 bc                   ajw #4c          ; adjust workspace - Move workspace pointer
-000000f6: 22 f0                   ret              ; return</screen>
+000000f4: 24 bc                   ajw #4c
+000000f6: 22 f0                   ret</programlisting>
 </para>
 </formalpara>
-<formalpara xml:id="_recode_c">
-<title>recode.c</title>
+<formalpara xml:id="_t1_asm">
+<title>t1.asm</title>
+<para>
+<programlisting language="st20" linenumbering="unnumbered">; New subroutine 0+9; References: 0, Local Vars: 8
+00000000: 60 b8     sub_0:        ajw #-8       ; réserve 8 variables locales
+00000002: 24 f2                   mint          ; A = MostNeg
+00000004: 24 20 50                ldnlp #400    ; A = MostNeg @ 0x400
+00000007: 23 fc                   gajw          ; Wptr = MostNeg @ 0x400
+
+; New subroutine 9+67; References: 0, Local Vars: 8
+00000009: 60 b8     sub_9:        ajw #-8            ; réserve 8 variables locales
+0000000b: 15        loc_b:        ldlp #5 [&amp;var_5]
+0000000c: 24 f2                   mint
+0000000e: 54                      ldnlp #4
+0000000f: 4c                      ldc #c
+00000010: f7                      in                 ; in(12, MostNeg @ 4, &amp;var_5)
+00000011: 75                      ldl #5 [var_5]
+00000012: 21 a2                   cj loc_26          ; saute à loc_26 si var_5 == 0
+00000014: 25 44                   ldc #54
+00000016: 21 fb                   ldpi [loc_6c]
+00000018: 24 f2                   mint
+0000001a: 54                      ldnlp #4
+0000001b: 75                      ldl #5 [var_5]
+0000001c: f7                      in                 ; in(var_5, MostNeg @ 4, loc_6c)
+0000001d: 24 4b                   ldc #4b
+0000001f: 21 fb                   ldpi [loc_6c]
+00000021: 76                      ldl #6 [var_6]
+00000022: 75                      ldl #5 [var_5]
+00000023: fb                      out                ; out(var_5, var_6, loc_6c)
+00000024: 61 05                   j loc_b
+00000026: 11        loc_26:       ldlp #1 [&amp;var_1]
+00000027: 24 f2                   mint
+00000029: 54                      ldnlp #4
+0000002a: 4c                      ldc #c
+0000002b: f7                      in                 ; in(12, MostNeg @ 4, &amp;var_1)
+0000002c: 11                      ldlp #1 [&amp;var_1]
+0000002d: 24 f2                   mint
+0000002f: 51                      ldnlp #1
+00000030: 4c                      ldc #c
+00000031: fb                      out                ; out(12, MostNeg @ 1, &amp;var_1)
+00000032: 11                      ldlp #1 [&amp;var_1]
+00000033: 24 f2                   mint
+00000035: 52                      ldnlp #2
+00000036: 4c                      ldc #c
+00000037: fb                      out                ; out(12, MostNeg @ 2, &amp;var_1)
+00000038: 11                      ldlp #1 [&amp;var_1]
+00000039: 24 f2                   mint
+0000003b: 53                      ldnlp #3
+0000003c: 4c                      ldc #c
+0000003d: fb                      out                ; out(12, MostNeg @ 3, &amp;var_1)
+0000003e: 10                      ldlp #0 [&amp;var_0]
+0000003f: 81                      adc #1
+00000040: 24 f2                   mint
+00000042: 55                      ldnlp #5
+00000043: 41                      ldc #1
+00000044: f7                      in                 ; in(1, MostNeg @ 5, &amp;var_0 + 1)
+00000045: 10                      ldlp #0 [&amp;var_0]
+00000046: 82                      adc #2
+00000047: 24 f2                   mint
+00000049: 56                      ldnlp #6
+0000004a: 41                      ldc #1
+0000004b: f7                      in                 ; in(1, MostNeg @ 6, &amp;var_0 + 2)
+0000004c: 10                      ldlp #0 [&amp;var_0]
+0000004d: 83                      adc #3
+0000004e: 24 f2                   mint
+00000050: 57                      ldnlp #7
+00000051: 41                      ldc #1
+00000052: f7                      in                 ; in(1, MostNeg @ 7, &amp;var_0 + 3)
+00000053: 10                      ldlp #0 [&amp;var_0]
+00000054: 81                      adc #1
+00000055: f1                      lb                 ; A = var_0[1]
+00000056: 10                      ldlp #0 [&amp;var_0]
+00000057: 82                      adc #2
+00000058: f1                      lb                 ; A = var_0[2], B = var_0[1]
+00000059: 23 f3                   xor                ; A = var_0[2] ^ var_0[1]
+0000005b: 10                      ldlp #0 [&amp;var_0]
+0000005c: 83                      adc #3
+0000005d: f1                      lb                 ; A = var_0[3], B = var_0[2] ^ var_0[1]
+0000005e: 23 f3                   xor                ; A = var_0[3] ^ (var_0[2] ^ var_0[1])
+00000060: 25 fa                   dup                ; A = var_0[3] ^ (var_0[2] ^ var_0[1]), B = A
+00000062: 10                      ldlp #0 [&amp;var_0]
+00000063: 23 fb                   sb                 ; var_0[0] = var_0[3] ^ (var_0[2] ^ var_0[1])
+00000065: 10                      ldlp #0 [&amp;var_0]
+00000066: 24 f2                   mint
+00000068: 41                      ldc #1
+00000069: fb                      out                ; out(1, MostNeg, var_0[3] ^ (var_0[2] ^ var_0[1]))
+0000006a: 64 0a                   j loc_26           ; saute à loc_26
+0000006c: 00        loc_6c:       nop
+0000006d: b8                      ajw #8
+0000006e: 22 f0                   ret</programlisting>
+</para>
+</formalpara>
+<formalpara xml:id="_decrypt_c">
+<title>decrypt.c</title>
+<para>
+<programlisting language="c" linenumbering="numbered">#include &lt;stdio.h&gt;
+#include &lt;stdlib.h&gt;
+#include &lt;stdint.h&gt;
+#include &lt;string.h&gt;
+
+#define DEBUG 0
+
+typedef struct tr_ctx {
+    uint8_t t4_st;
+    uint8_t t5_st;
+    uint16_t t6_st;
+    uint8_t t8_idx;
+    uint8_t t8_st[4][12];
+    uint8_t t10_idx;
+    uint8_t t10_st[4][12];
+    uint8_t t12_st[12];
+} tr_ctx_t;
+
+inline uint8_t transputer_4(const uint8_t * key, tr_ctx_t * ctx) {
+    int i;
+
+    for (i = 0; i &lt; 12; i++)
+        ctx-&gt;t4_st += key[i];
+
+    return ctx-&gt;t4_st;
+}
+
+inline uint8_t transputer_5(const uint8_t * key, tr_ctx_t * ctx) {
+    int i;
+
+    for (i = 0; i &lt; 12; i++)
+        ctx-&gt;t5_st ^= key[i];
+
+    return ctx-&gt;t5_st;
+}
+
+inline uint8_t transputer_6(const uint8_t * key, tr_ctx_t * ctx) {
+    uint16_t k1, k2, k3;
+
+    k1 = (ctx-&gt;t6_st &amp; 0x8000) &gt;&gt; 0xf;
+    k2 = (ctx-&gt;t6_st &amp; 0x4000) &gt;&gt; 0xe;
+
+    k2 ^= k1;
+    k3 = (ctx-&gt;t6_st &lt;&lt; 1);
+
+    ctx-&gt;t6_st = k3 ^ k2;
+
+    return ctx-&gt;t6_st &amp; 0xff;
+}
+
+inline uint8_t transputer_1(const uint8_t * key, tr_ctx_t * ctx) {
+    uint8_t a, b, c;
+
+    a = transputer_4(key, ctx);
+    b = transputer_5(key, ctx);
+    c = transputer_6(key, ctx);
+#if DEBUG
+    printf("[T1] T4 : 0x%2.2x T5 : 0x%2.2x T6 : 0x%2.2x\n", a, b, c);
+#endif
+
+    return (a ^ b) ^ c;
+}
+
+inline uint8_t transputer_7(const uint8_t * key, tr_ctx_t * ctx) {
+    uint8_t var_1, var_2;
+    int i;
+
+    var_1 = 0; var_2 = 0;
+
+    for (i = 0; i &lt; 6; i++) {
+        var_1 += key[i];
+        var_2 += key[i + 6];
+    }
+
+    return var_1 ^ var_2;
+}
+
+inline uint8_t transputer_8(const uint8_t * key, tr_ctx_t * ctx) {
+    int i, j;
+    uint8_t var_3, var_1;
+
+    memcpy(ctx-&gt;t8_st[ctx-&gt;t8_idx], key, 12);
+    ctx-&gt;t8_idx = (ctx-&gt;t8_idx + 1) % 4;
+
+    var_3 = 0;
+    for (i = 0; i &lt; 4; i++) {
+        var_1 = 0;
+        for (j = 0; j &lt; 12; j++)
+            var_1 += ctx-&gt;t8_st[i][j];
+
+        var_3 = var_1 ^ var_3;
+    }
+
+    return var_3;
+}
+
+inline uint8_t transputer_9(const uint8_t * key, tr_ctx_t * ctx) {
+    uint8_t var_1;
+    int i;
+
+    var_1 = 0;
+    for (i = 0; i &lt; 12; i++)
+        var_1 ^= (key[i] &lt;&lt; (i &amp; 0x7));
+
+    return var_1;
+}
+
+inline uint8_t transputer_2(const uint8_t * key, tr_ctx_t * ctx) {
+    uint8_t a, b, c;
+
+    a = transputer_7(key, ctx);
+    b = transputer_8(key, ctx);
+    c = transputer_9(key, ctx);
+#if DEBUG
+    printf("[T2] T7 : 0x%2.2x T8 : 0x%2.2x T9 : 0x%2.2x\n", a, b, c);
+#endif
+
+    return (a ^ b) ^ c;
+}
+
+inline uint8_t transputer_10(const uint8_t * key, tr_ctx_t * ctx) {
+    int i, j;
+    uint8_t var_1;
+
+    memcpy(ctx-&gt;t10_st[ctx-&gt;t10_idx], key, 12);
+    ctx-&gt;t10_idx = (ctx-&gt;t10_idx + 1) % 4;
+
+    var_1 = 0;
+    for (i = 0; i &lt; 4; i++) {
+        var_1 += ctx-&gt;t10_st[i][0];
+    }
+
+    i = var_1 &amp; 3;
+    j = (var_1 &gt;&gt; 4) % 12;
+
+    return ctx-&gt;t10_st[i][j];
+}
+
+inline uint8_t transputer_11(const uint8_t * key, tr_ctx_t * ctx) {
+    uint8_t var_1;
+
+    var_1 = ctx-&gt;t12_st[9] ^ (ctx-&gt;t12_st[5] ^ ctx-&gt;t12_st[1]);	/* from T12 */
+    memcpy(ctx-&gt;t12_st, key, 12);
+
+    return key[var_1 % 12];
+}
+
+inline uint8_t transputer_12(const uint8_t * key, tr_ctx_t * ctx) {
+    uint8_t var_2;
+
+    var_2 = key[7] ^ (key[3] ^ key[0]);	/* from T11 */
+
+    return key[var_2 % 12];
+}
+
+inline uint8_t transputer_3(const uint8_t * key, tr_ctx_t * ctx) {
+    uint8_t a, b, c;
+
+    a = transputer_10(key, ctx);
+    b = transputer_11(key, ctx);
+    c = transputer_12(key, ctx);
+#if DEBUG
+    printf("[T3] T10: 0x%2.2x T11: 0x%2.2x T12: 0x%2.2x\n", a, b, c);
+#endif
+
+    return (a ^ b) ^ c;
+}
+
+void
+transputer_0(const char *key, const char *cipher, int cipher_len, char *plain, tr_ctx_t * ctx) {
+    uint8_t current_key[12];
+    int i;
+    uint8_t t1_res, t2_res, t3_res;
+
+    memcpy(current_key, key, 12);
+
+    for (i = 0; i &lt; cipher_len; i++) {
+        t1_res = transputer_1(current_key, ctx);
+        t2_res = transputer_2(current_key, ctx);
+        t3_res = transputer_3(current_key, ctx);
+
+#if DEBUG
+        printf("[T0] T1 : 0x%2.2x T2 : 0x%2.2x T3 : 0x%2.2x\n", t1_res, t2_res, t3_res);
+#endif
+
+        plain[i] = cipher[i] ^ (2 * current_key[i % 12] + i % 12);
+
+        current_key[i % 12] = (t1_res ^ t2_res) ^ t3_res;
+    }
+}
+
+void init_ctx(tr_ctx_t * ctx, const uint8_t * key) {
+    int i;
+
+    memset(ctx, 0, sizeof(struct tr_ctx));
+
+    /* t6 init */
+    for (i = 0; i &lt; 12; i++)
+        ctx-&gt;t6_st = (ctx-&gt;t6_st + key[i]) &amp; 0xffff;
+}
+
+void decipher(const char *key, const char *cipher, char *plain, int size) {
+    tr_ctx_t ctx;
+    init_ctx(&amp;ctx, (const uint8_t *)key);
+    transputer_0(key, cipher, size, plain, &amp;ctx);
+}
+
+int self_test(int count) {
+    int ret = 0, i;
+    char *key = "*SSTIC-2015*";
+    char *cipher = "\x1d\x87\xc4\xc4\xe0\xee\x40\x38\x3c\x59\x44\x7f\x23\x79\x8d\x9f\xef\xe7\x4f\xb8\x24\x80\x76\x6e";
+    char plain[24];
+    int data_size = 24;
+
+    for (i = 0; i &lt; count &amp;&amp; ret == 0; i++) {
+        decipher(key, cipher, plain, data_size);
+        ret = strncmp("I love ST20 architecture", plain, data_size);
+    }
+
+    return ret;
+}
+
+#ifdef _STANDALONE_
+int main(int argc, char **argv) {
+    if (self_test(2) != 0) {
+        fprintf(stderr, "self-test failed\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("[+] self-test passed\n");
+
+    return EXIT_SUCCESS;
+}
+#endif</programlisting>
+</para>
+</formalpara>
+<formalpara xml:id="_bf_c">
+<title>bf.c</title>
 <para>
 <programlisting language="c" linenumbering="numbered">#define _GNU_SOURCE
 #include &lt;stdio.h&gt;
@@ -1888,487 +3952,162 @@ console.log(new_code);</programlisting>
 #include &lt;stdint.h&gt;
 #include &lt;unistd.h&gt;
 #include &lt;openssl/sha.h&gt;
-#include &lt;sys/types.h&gt;
 #include &lt;sys/stat.h&gt;
 #include &lt;fcntl.h&gt;
 #include &lt;string.h&gt;
 #include &lt;omp.h&gt;
 
+#include "decrypt.h"
 #include "keys.h"
-
-#define DEBUG 0
 
 #define PLAIN_TEXT_LOOKUP_SZ 32
 
-typedef struct tr_ctx {
-	uint8_t t4_st;
-	uint8_t t5_st;
-	uint16_t t6_st;
-	uint8_t t8_idx;
-	uint8_t t8_st[4][12];
-	uint8_t t10_idx;
-	uint8_t t10_st[4][12];
-	uint8_t t12_st[12];
-} tr_ctx_t;
-
-/* Tested, OK
-   l 7ff80000 transputer_4.bin
-   i 7ff8000c
-   s i 7ff80003
-   g
-   w 2 5453532a
-   w 3 322d4349
-   w 4 2a353130
-   s i 7ff80009
-   g
-   result =&gt; 0xcf
-   */
-inline uint8_t transputer_4(const uint8_t * key, tr_ctx_t * ctx) {
-	int i;
-
-	for (i = 0; i &lt; 12; i++)
-		ctx-&gt;t4_st += key[i];
-
-	return ctx-&gt;t4_st;
-}
-
-/* Tested, OK
-   l 7ff80000 transputer_5.bin
-   i 7ff8000c
-   s i 7ff80003
-   g
-
-   w 2 5453532a
-   w 3 322d4349
-   w 4 2a353130
-   s i 7ff80009
-   g
-
-   result =&gt; 0x75
-   */
-inline uint8_t transputer_5(const uint8_t * key, tr_ctx_t * ctx) {
-	int i;
-
-	for (i = 0; i &lt; 12; i++)
-		ctx-&gt;t5_st ^= key[i];
-
-	return ctx-&gt;t5_st;
-}
-
-/* Tested, OK
-   l 7ff80000 transputer_6.bin
-   i 7ff8000c
-   s i 7ff80003
-   g
-
-   w 4 5453532a
-   w 5 322d4349
-   w 6 2a353130
-   s i 7ff80009
-   g
-
-   result =&gt; 0x9e
-   */
-inline uint8_t transputer_6(const uint8_t * key, tr_ctx_t * ctx) {
-	uint16_t k1, k2, k3;
-
-	k1 = (ctx-&gt;t6_st &amp; 0x8000) &gt;&gt; 0xf;
-	k2 = (ctx-&gt;t6_st &amp; 0x4000) &gt;&gt; 0xe;
-
-	k2 ^= k1;
-	k3 = (ctx-&gt;t6_st &lt;&lt; 1);
-
-	ctx-&gt;t6_st = k3 ^ k2;
-
-	return ctx-&gt;t6_st &amp; 0xff;
-}
-
-inline uint8_t transputer_1(const uint8_t * key, tr_ctx_t * ctx) {
-	uint8_t a, b, c;
-
-	a = transputer_4(key, ctx);
-	b = transputer_5(key, ctx);
-	c = transputer_6(key, ctx);
-#if DEBUG
-	printf("[T1] T4 : 0x%2.2x T5 : 0x%2.2x T6 : 0x%2.2x\n", a, b, c);
-#endif
-
-	return (a ^ b) ^ c;
-}
-
-/* Tested, OK
-   l 7ff80000 transputer_7.bin
-   i 7ff8000c
-   s i 7ff80003
-   g
-
-   w 4 5453532a
-   w 5 322d4349
-   w 6 2a353130
-   s i 7ff80009
-   g
-
-   result =&gt; 0xaf
-   */
-inline uint8_t transputer_7(const uint8_t * key, tr_ctx_t * ctx) {
-	uint8_t var_1, var_2;
-	int i;
-
-	var_1 = 0;
-	var_2 = 0;
-
-	for (i = 0; i &lt; 6; i++) {
-		var_1 += key[i];
-		var_2 += key[i + 6];
-	}
-
-	return var_1 ^ var_2;
-}
-
-/* Tested, OK
-   l 7ff80000 transputer_8.bin
-   i 7ff8000c
-   s i 7ff80003
-   g
-
-   w 5 5453532a
-   w 6 322d4349
-   w 7 2a353130
-   s i 7ff80009
-   g
-
-   result =&gt; 0xcf
-   */
-inline uint8_t transputer_8(const uint8_t * key, tr_ctx_t * ctx) {
-	int i, j;
-	uint8_t var_3, var_1;
-
-	memcpy(ctx-&gt;t8_st[ctx-&gt;t8_idx], key, 12);
-	ctx-&gt;t8_idx = (ctx-&gt;t8_idx + 1) % 4;
-
-	var_3 = 0;
-	for (i = 0; i &lt; 4; i++) {
-		var_1 = 0;
-		for (j = 0; j &lt; 12; j++)
-			var_1 += ctx-&gt;t8_st[i][j];
-
-		var_3 = var_1 ^ var_3;
-	}
-
-	return var_3;
-}
-
-/* Tested, OK
-   l 7ff80000 transputer_9.bin
-   i 7ff8000c
-   s i 7ff80003
-   g
-
-   w 2 5453532a
-   w 3 322d4349
-   w 4 2a353130
-   s i 7ff80009
-   g
-
-   result =&gt; 0x06
-   */
-inline uint8_t transputer_9(const uint8_t * key, tr_ctx_t * ctx) {
-	uint8_t var_1;
-	int i;
-
-	var_1 = 0;
-	for (i = 0; i &lt; 12; i++)
-		var_1 ^= (key[i] &lt;&lt; (i &amp; 0x7));
-
-	return var_1;
-}
-
-inline uint8_t transputer_2(const uint8_t * key, tr_ctx_t * ctx) {
-	uint8_t a, b, c;
-
-	a = transputer_7(key, ctx);
-	b = transputer_8(key, ctx);
-	c = transputer_9(key, ctx);
-#if DEBUG
-	printf("[T2] T7 : 0x%2.2x T8 : 0x%2.2x T9 : 0x%2.2x\n", a, b, c);
-#endif
-
-	return (a ^ b) ^ c;
-}
-
-/* ?
-   l 7ff80000 transputer_10.bin
-   i 7ff8000c
-   s i 7ff80003
-   g
-
-   w 4 5453532a
-   w 5 322d4349
-   w 6 2a353130
-   s i 7ff80065
-   g
-
-
-*/
-inline uint8_t transputer_10(const uint8_t * key, tr_ctx_t * ctx) {
-	int i, j;
-	uint8_t var_1;
-
-	memcpy(ctx-&gt;t10_st[ctx-&gt;t10_idx], key, 12);
-	ctx-&gt;t10_idx = (ctx-&gt;t10_idx + 1) % 4;
-
-	var_1 = 0;
-	for (i = 0; i &lt; 4; i++) {
-		var_1 += ctx-&gt;t10_st[i][0];
-	}
-
-	i = var_1 &amp; 3;
-	j = (var_1 &gt;&gt; 4) % 12;
-
-	return ctx-&gt;t10_st[i][j];
-}
-
-/*
-   l 7ff80000 transputer_11.bin
-   i 7ff8000c
-   s i 7ff80003
-   g
-
-   w 3 5453532a
-   w 4 322d4349
-   w 5 2a353130
-   s i 7ff80030
-   g
-   */
-inline uint8_t transputer_11(const uint8_t * key, tr_ctx_t * ctx) {
-	uint8_t var_1;
-
-	var_1 = ctx-&gt;t12_st[9] ^ (ctx-&gt;t12_st[5] ^ ctx-&gt;t12_st[1]);	/* from T12 */
-	return key[var_1 % 12];
-}
-
-inline uint8_t transputer_12(const uint8_t * key, tr_ctx_t * ctx) {
-	uint8_t var_2;
-
-	memcpy(ctx-&gt;t12_st, key, 12);
-	var_2 = key[7] ^ (key[3] ^ key[0]);	/* from T11 */
-
-	return key[var_2 % 12];
-}
-
-inline uint8_t transputer_3(const uint8_t * key, tr_ctx_t * ctx) {
-	uint8_t a, b, c;
-
-	a = transputer_10(key, ctx);
-	b = transputer_11(key, ctx);
-	c = transputer_12(key, ctx);
-#if DEBUG
-	printf("[T3] T10: 0x%2.2x T11: 0x%2.2x T12: 0x%2.2x\n", a, b, c);
-#endif
-
-	return (a ^ b) ^ c;
-}
-
-void
-transputer_0(const char *key, const char *cipher, int cipher_len, char *plain, tr_ctx_t * ctx) {
-	uint8_t current_key[12];
-	int i;
-	uint8_t t1_res, t2_res, t3_res;
-
-	memcpy(current_key, key, 12);
-
-	for (i = 0; i &lt; cipher_len; i++) {
-		t1_res = transputer_1(current_key, ctx);
-		t2_res = transputer_2(current_key, ctx);
-		t3_res = transputer_3(current_key, ctx);
-
-#if DEBUG
-		printf("[T0] T1 : 0x%2.2x T2 : 0x%2.2x T3 : 0x%2.2x\n", t1_res, t2_res, t3_res);
-#endif
-
-		plain[i] = cipher[i] ^ (2 * current_key[i % 12] + i % 12);
-
-		current_key[i % 12] = (t1_res ^ t2_res) ^ t3_res;
-	}
-}
-
-void init_ctx(tr_ctx_t * ctx, const uint8_t * key) {
-	int i;
-
-	memset(ctx, 0, sizeof(struct tr_ctx));
-
-	/* t6 init */
-	for (i = 0; i &lt; 12; i++)
-		ctx-&gt;t6_st = (ctx-&gt;t6_st + key[i]) &amp; 0xffff;
-}
-
-void decipher(const char *key, const char *cipher, char *plain, int size) {
-	tr_ctx_t ctx;
-	init_ctx(&amp;ctx, (const uint8_t *)key);
-	transputer_0(key, cipher, size, plain, &amp;ctx);
-}
-
 void sha256sum(const char *data, int len, char output[65]) {
-	int i;
-	uint8_t hash[SHA256_DIGEST_LENGTH];
-	SHA256_CTX sha256;
-	SHA256_Init(&amp;sha256);
-	SHA256_Update(&amp;sha256, data, len);
-	SHA256_Final(hash, &amp;sha256);
+    int i;
+    uint8_t hash[SHA256_DIGEST_LENGTH];
+    SHA256_CTX sha256;
+    SHA256_Init(&amp;sha256);
+    SHA256_Update(&amp;sha256, data, len);
+    SHA256_Final(hash, &amp;sha256);
 
-	for (i = 0; i &lt; SHA256_DIGEST_LENGTH; i++) {
-		sprintf(output + (i * 2), "%02x", hash[i]);
-	}
-	output[64] = 0;
+    for (i = 0; i &lt; SHA256_DIGEST_LENGTH; i++) {
+        sprintf(output + (i * 2), "%02x", hash[i]);
+    }
+    output[64] = 0;
 }
 
 const char *cipher_sha256 = "a5790b4427bc13e4f4e9f524c684809ce96cd2f724e29d94dc999ec25e166a81";
 const char *plain_sha256 = "9128135129d2be652809f5a1d337211affad91ed5827474bf9bd7e285ecef321";
 
 void bf(const char *path) {
-	int fd, ret, hcount = 0;
-	struct stat st;
-	off_t size;
-	char *cipher_bf = NULL;
-	char sha256[65];
-	int i;
-	int keyfound;
-	uint8_t hchars[4] = { '-', '\\', '|', '/' };
+    int fd, ret, hcount = 0;
+    struct stat st;
+    off_t size;
+    char *cipher_bf = NULL;
+    char sha256[65];
+    int i;
+    int keyfound;
+    uint8_t hchars[4] = { '-', '\\', '|', '/' };
 
-	fd = open(path, O_RDONLY);
-	if (fd == -1) {
-		perror("open failed");
-		exit(EXIT_FAILURE);
-	}
-	ret = fstat(fd, &amp;st);
-	if (ret == -1) {
-		perror("fstat");
-		exit(EXIT_FAILURE);
-	}
-	size = st.st_size;
+    fd = open(path, O_RDONLY);
+    if (fd == -1) {
+        perror("open failed");
+        exit(EXIT_FAILURE);
+    }
+    ret = fstat(fd, &amp;st);
+    if (ret == -1) {
+        perror("fstat");
+        exit(EXIT_FAILURE);
+    }
+    size = st.st_size;
 
-	cipher_bf = malloc(size);
-	if (!cipher_bf) {
-		perror("malloc cipher");
-		goto finish;
-	}
+    cipher_bf = malloc(size);
+    if (!cipher_bf) {
+        perror("malloc cipher");
+        goto finish;
+    }
 
-	ret = read(fd, cipher_bf, size);
-	if (ret != size) {
-		printf("error during read\n");
-		goto finish;
-	}
-	close(fd);
+    ret = read(fd, cipher_bf, size);
+    if (ret != size) {
+        printf("error during read\n");
+        goto finish;
+    }
+    close(fd);
 
-	sha256sum(cipher_bf, size, sha256);
-	if (strcmp(sha256, cipher_sha256) != 0) {
-		printf("wrong sha256: %s\n", sha256);
-		goto finish;
-	}
+    sha256sum(cipher_bf, size, sha256);
+    if (strcmp(sha256, cipher_sha256) != 0) {
+        printf("wrong sha256: %s\n", sha256);
+        goto finish;
+    }
 #pragma omp parallel
-	{
+    {
 #pragma omp barrier
-		if (omp_get_thread_num() == 0)
-			fprintf(stderr, "[+] starting %d threads\n", omp_get_num_threads());
-	}
+        if (omp_get_thread_num() == 0)
+            fprintf(stderr, "[+] starting %d threads\n", omp_get_num_threads());
+    }
 
-	keyfound = 0;
-	printf("[+] testing %d keys\n", KEYS_COUNT);
+    keyfound = 0;
+    printf("[+] testing %d keys\n", KEYS_COUNT);
 #pragma omp parallel
-	for (i = 0; i &lt; KEYS_COUNT; i++) {
-		char *key;
-		int j, k, l, out_fd, thread_id;
-		char *plain_bf = NULL;
-		char plain_text_lookup[PLAIN_TEXT_LOOKUP_SZ];
-		char sha256[65];
+    for (i = 0; i &lt; KEYS_COUNT; i++) {
+        char *key;
+        int j, k, l, out_fd, thread_id;
+        char *plain_bf = NULL;
+        char plain_text_lookup[PLAIN_TEXT_LOOKUP_SZ];
+        char sha256[65];
 
-		if (keyfound == 1) {
-			i = KEYS_COUNT;
-			continue;
-		}
-		key = keys[i];
+        if (keyfound == 1) {
+            i = KEYS_COUNT;
+            continue;
+        }
+        key = keys[i];
 
-		thread_id = omp_get_thread_num();
-		if (thread_id == 0) {
-			fprintf(stderr, "\r[%c] key = ", hchars[hcount++ % 4]);
-			for (l = 0; l &lt; 10; l++)
-				fprintf(stderr, "%2.2x", key[l] &amp; 0xff);
-			fprintf(stderr, "????");
-			fflush(stderr);
-		}
+        thread_id = omp_get_thread_num();
+        if (thread_id == 0) {
+            fprintf(stderr, "\r[%c] key = ", hchars[hcount++ % 4]);
+            for (l = 0; l &lt; 10; l++)
+                fprintf(stderr, "%2.2x", key[l] &amp; 0xff);
+            fprintf(stderr, "????");
+            fflush(stderr);
+        }
 
-		for (j = 0; j &lt; 256; j++) {
-			key[10] = j;
+        for (j = 0; j &lt; 256; j++) {
+            key[10] = j;
 
-			for (k = 0; k &lt; 256; k++) {
-				key[11] = k;
+            for (k = 0; k &lt; 256; k++) {
+                key[11] = k;
 
-				decipher(key, cipher_bf, plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ);
+                decipher(key, cipher_bf, plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ);
 
-				if (!memmem(plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ,
-							"\xFF\xFF\xFF\xFF", 4))
-					continue;
+                if (!memmem(plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ,
+                            "\xFF\xFF\xFF\xFF", 4))
+                    continue;
 
-				if (!plain_bf)
-					plain_bf = malloc(size);
+                if (!plain_bf)
+                    plain_bf = malloc(size);
 
-				decipher(key, cipher_bf, plain_bf, size);
-				sha256sum(plain_bf, size, sha256);
+                decipher(key, cipher_bf, plain_bf, size);
+                sha256sum(plain_bf, size, sha256);
 
-				if (!strncmp(sha256, plain_sha256, 64))
+                if (!strncmp(sha256, plain_sha256, 64))
 #pragma omp critical
-				{
-					keyfound = 1;
-					fprintf(stderr, "\r[!] key = ");
-					for (l = 0; l &lt; 12; l++)
-						fprintf(stderr, "%2.2x", key[l] &amp; 0xff);
+                {
+                    keyfound = 1;
+                    fprintf(stderr, "\r[!] key = ");
+                    for (l = 0; l &lt; 12; l++)
+                        fprintf(stderr, "%2.2x", key[l] &amp; 0xff);
 
-					fprintf(stderr, "\n[+] result saved in congratulations.tar.bz2\n");
-					out_fd = open("congratulations.tar.bz2", O_WRONLY | O_CREAT,
-							S_IRUSR | S_IWUSR);
-					ret = write(out_fd, plain_bf, size);
-					if (ret != size)
-						perror("write:");
-					close(out_fd);
-				}
-			}
-		}
-	}
+                    fprintf(stderr, "\n[+] result saved in congratulations.tar.bz2\n");
+                    out_fd = open("congratulations.tar.bz2", O_WRONLY | O_CREAT,
+                            S_IRUSR | S_IWUSR);
+                    ret = write(out_fd, plain_bf, size);
+                    if (ret != size)
+                        perror("write:");
+                    close(out_fd);
+                }
+            }
+        }
+    }
 
- finish:
-	if (cipher_bf)
-		free(cipher_bf);
-}
-
-int self_test(int count) {
-	int ret = 0, i;
-	char *test_key = "*SSTIC-2015*";
-	char *test_data = "\x1d\x87\xc4\xc4\xe0\xee\x40\x38\x3c\x59\x44\x7f\x23\x79\x8d\x9f\xef\xe7\x4f\xb8\x24\x80\x76\x6e";
-	char test_plain[24];
-	int test_data_size = 24;
-
-	for (i = 0; i &lt; count &amp;&amp; ret == 0; i++) {
-		decipher(test_key, test_data, test_plain, test_data_size);
-		ret = strncmp("I love ST20 architecture", test_plain, test_data_size);
-	}
-
-	return ret;
+finish:
+    if (cipher_bf)
+        free(cipher_bf);
 }
 
 int main(int argc, char **argv) {
-	if (self_test(2) != 0) {
-		fprintf(stderr, "self-test failed\n");
-		exit(EXIT_FAILURE);
-	}
-	printf("[+] self-test passed\n");
+    if (self_test(2) != 0) {
+        fprintf(stderr, "self-test failed\n");
+        exit(EXIT_FAILURE);
+    }
+    printf("[+] self-test passed\n");
 
-	if (argc != 2) {
-		printf("usage: %s encrypted.bin\n", argv[0]);
-		exit(EXIT_FAILURE);
-	}
-	bf(argv[1]);
+    if (argc != 2) {
+        printf("usage: %s encrypted.bin\n", argv[0]);
+        exit(EXIT_FAILURE);
+    }
+    bf(argv[1]);
 
-	return EXIT_SUCCESS;
+    return EXIT_SUCCESS;
 }</programlisting>
 </para>
 </formalpara>
