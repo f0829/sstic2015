@@ -2142,7 +2142,7 @@ une même logique qui peut être décrite ainsi :</simpara>
 </itemizedlist>
 </listitem>
 </itemizedlist>
-<simpara>Des analyses similaires permettent d&#8217;obtenir le pseudo-code suivant pour les transputers 5 à 10 :</simpara>
+<simpara>Le pseudo-code ci-dessous est obtenu pour les transputers 5 à 10 :</simpara>
 <programlisting language="c" linenumbering="unnumbered">/* Transputer 5 */
 void sub_c_t5(uint32_t arg_1) {
     uint8_t i, var_1;
@@ -2756,13 +2756,13 @@ Wptr  0=0x00000001  1=0x000000cf  2=0x5453532a  3=0x322d4349 <co xml:id="CO5-8"/
 <para>place un point d&#8217;arrêt après la lecture de la clé</para>
 </callout>
 <callout arearefs="CO5-4">
-<para><literal>TSS*</literal> dans var_2</para>
+<para><literal>*SST</literal> dans var_2</para>
 </callout>
 <callout arearefs="CO5-5">
-<para><literal>2-CI</literal> dans var_3</para>
+<para><literal>IC-2</literal> dans var_3</para>
 </callout>
 <callout arearefs="CO5-6">
-<para><literal>*510</literal> dans var_4</para>
+<para><literal>015*</literal> dans var_4</para>
 </callout>
 <callout arearefs="CO5-7">
 <para>place un point d&#8217;arrêt avant l&#8217;envoi du résultat</para>
@@ -3023,12 +3023,13 @@ gcc -O3 -march=native -fomit-frame-pointer -funroll-loops -Wall -fopenmp -o bf b
 $ dd if=input_remaining.bin bs=1 skip=40 of=encrypted.bin <co xml:id="CO6-1"/>
 $ sha256sum encrypted.bin
 a5790b4427bc13e4f4e9f524c684809ce96cd2f724e29d94dc999ec25e166a81  encrypted.bin
-$ ./bf encrypted.bin
+$ time ./bf encrypted.bin
 [+] self-test passed
 [+] starting 4 threads
 [+] testing 5120 keys
 [!] key = 5ed49b7156fce47de976dac5
-[+] result saved in congratulations.tar.bz2</programlisting>
+[+] result saved in congratulations.tar.bz2
+./bf encrypted.bin  282,40s user 0,09s system 385% cpu 1:13,34 total</programlisting>
 <calloutlist>
 <callout arearefs="CO6-1">
 <para><literal>input_remaining</literal> est obtenu à l&#8217;aide du script <xref linkend="_split_rb"/> depuis le fichier <literal>input.bin</literal>, 40 est le décalage

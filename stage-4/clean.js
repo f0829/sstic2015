@@ -30,7 +30,6 @@ function simplify_node(node) {
 
 function simplify_ast(ast) {
     var assignments = {};
-    var renaming = {};
     var f_count = 0;
     var scopeChain = [];
 
@@ -46,7 +45,6 @@ function simplify_ast(ast) {
             if (scopeName) {
                 scopeChain.push(scopeName);
                 assignments[scopeName] = {};
-                renaming[scopeName] = {};
             }
 
             if (node.type == 'Identifier') {
@@ -69,10 +67,6 @@ function simplify_ast(ast) {
                 } else if ((parent.type == 'UpdateExpression') && k) {
                     k['ref_count']++;
                 }
-                /*else if ((parent.type == 'FunctionDeclaration') && (parent.id == node)) {
-                		    renaming[node.name] = "func_" + f_count;
-                		    f_count++;
-                		} */
             }
         },
         leave: function(node, parent) {
@@ -106,11 +100,6 @@ function simplify_ast(ast) {
                         return k.node;
                     }
                 }
-                /*
-		if (renaming[node.name]) {
-		    node.name = renaming[node.name];
-		}
-		*/
             }
             return simplify_node(node);
         },
@@ -124,6 +113,7 @@ function simplify_ast(ast) {
     return result;
 }
 
+/* Looking for a fix point */
 new_code = ""
 do {
     old_code = new_code;
