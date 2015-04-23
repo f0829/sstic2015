@@ -199,7 +199,7 @@ void init_ctx(tr_ctx_t * ctx, const uint8_t * key) {
         ctx->t6_st = (ctx->t6_st + key[i]) & 0xffff;
 }
 
-void decipher(const char *key, const char *cipher, char *plain, int size) {
+void decrypt(const char *key, const char *cipher, char *plain, int size) {
     tr_ctx_t ctx;
     init_ctx(&ctx, (const uint8_t *)key);
     transputer_0(key, cipher, size, plain, &ctx);
@@ -213,7 +213,7 @@ int self_test(int count) {
     int data_size = 24;
 
     for (i = 0; i < count && ret == 0; i++) {
-        decipher(key, cipher, plain, data_size);
+        decrypt(key, cipher, plain, data_size);
         ret = strncmp("I love ST20 architecture", plain, data_size);
     }
 

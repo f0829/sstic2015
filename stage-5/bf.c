@@ -109,7 +109,7 @@ void bf(const char *path) {
             for (k = 0; k < 256; k++) {
                 key[11] = k;
 
-                decipher(key, cipher_bf, plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ);
+                decrypt(key, cipher_bf, plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ);
 
                 if (!memmem(plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ,
                             "\xFF\xFF\xFF\xFF", 4))
@@ -118,7 +118,7 @@ void bf(const char *path) {
                 if (!plain_bf)
                     plain_bf = malloc(size);
 
-                decipher(key, cipher_bf, plain_bf, size);
+                decrypt(key, cipher_bf, plain_bf, size);
                 sha256sum(plain_bf, size, sha256);
 
                 if (!strncmp(sha256, plain_sha256, 64))

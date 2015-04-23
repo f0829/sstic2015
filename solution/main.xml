@@ -5,7 +5,7 @@
 <info>
 <title>Challenge SSTIC 2015 </title>
 <subtitle>éléments de solution</subtitle>
-<date>2015-04-21</date>
+<date>2015-04-23</date>
 <author>
 <personname>
 <firstname>Julien</firstname>
@@ -17,17 +17,17 @@
 <revhistory>
 <revision>
 <revnumber>1.0</revnumber>
-<date>2015-04-21</date>
+<date>2015-04-23</date>
 <authorinitials>JP</authorinitials>
 </revision>
 </revhistory>
 </info>
 <simpara>Ce document présente la méthodologie suivie pour résoudre l&#8217;édition
-2015 du challenge SSTIC. La validation du challenge nécessite de retrouver une
-adresse email au sein du fichier téléchargé depuis le site Internet du
+2015 du challenge SSTIC. La validation de celui-ci nécessite de retrouver une
+adresse email au sein d&#8217;un fichier téléchargé depuis le site Internet du
 symposium.</simpara>
-<simpara>Six étapes doivent être séquentiellement suivies pour obtenir l&#8217;adresse email
-recherchée, à savoir :</simpara>
+<simpara>Six étapes doivent être séquentiellement résolues pour obtenir l&#8217;adresse email
+recherchée :</simpara>
 <itemizedlist>
 <listitem>
 <simpara>l&#8217;étude d&#8217;une image de carte SD contenant une charge utile pour Rubber Ducky ;</simpara>
@@ -36,7 +36,7 @@ recherchée, à savoir :</simpara>
 <simpara>l&#8217;identification d&#8217;une clé de déchiffrement dans une carte du jeu Quake 3 ;</simpara>
 </listitem>
 <listitem>
-<simpara>la reconstitution d&#8217;une image depuis les déplacements et clics d&#8217;une souris
+<simpara>la reconstitution d&#8217;une image depuis les déplacements et les clics d&#8217;une souris
 extraits d&#8217;une capture USB ;</simpara>
 </listitem>
 <listitem>
@@ -76,7 +76,7 @@ drwxr-xr-x 7 root root     4096 avril  3 19:54 ..
 /mnt/loop/inject.bin: data
 $ strings /mnt/loop/inject.bin | wc -l
 0</programlisting>
-<simpara>Par contre, la commande <literal>strings</literal> appelée directement sur le fichier image
+<simpara>Par contre, la commande <literal>strings</literal> appelée directement sur l&#8217;image
 retourne deux chaînes intéressantes :</simpara>
 <programlisting language="console" linenumbering="unnumbered">$ strings sdcard.img|tail -n 2
 INJECT  BIN
@@ -113,7 +113,7 @@ de décodage permettant de reconstituer la charge binaire finale
 </itemizedlist>
 <simpara>La séquence de frappes clavier à simuler est décrite dans un fichier au format
 <link xlink:href="https://github.com/hak5darren/USB-Rubber-Ducky/wiki/Duckyscript">&#8220;Ducky Script&#8221;</link>.
-Ce fichier est ensuite compilé avec l&#8217;outil <literal>duckendoder</literal> pour obtenir un fichier
+Ce fichier est ensuite compilé avec l&#8217;outil <literal>duckendoder</literal> pour produire un fichier
 binaire <literal>input.bin</literal> : au moment de la connexion de la clé USB,
 le micro-contrôleur ira lire le contenu de ce fichier pour démarrer l&#8217;attaque.</simpara>
 <simpara>L&#8217;objectif à ce stade est de pouvoir retrouver le code source du script à partir
@@ -148,14 +148,14 @@ SPACE
  Z g B 1 [...] D s A f Q A = 00a0
  [...]</programlisting>
 <simpara>La signification du paramètre <literal>-enc</literal> de <literal>powershell</literal> est détaillée sur la page
-<link xlink:href="https://technet.microsoft.com/fr-fr/library/hh847736.aspx">https://technet.microsoft.com/fr-fr/library/hh847736.aspx</link> : il permet de pouvoir
-passer des commandes à exécuter codées en base64. La valeur <literal>00a0</literal> correspond
+<link xlink:href="https://technet.microsoft.com/fr-fr/library/hh847736.aspx">https://technet.microsoft.com/fr-fr/library/hh847736.aspx</link> : il permet
+de passer des commandes à exécuter codées en base64. La valeur <literal>00a0</literal> correspond
 à un opcode Ducky Script inconnu de <literal>ducky-decode.pl</literal> et donc non décodé.</simpara>
 <simpara>On peut donc tenter d&#8217;extraire la chaîne passée en paramètre puis la décoder
 avec la commande <literal>base64</literal> :</simpara>
 <programlisting language="console" linenumbering="unnumbered">$ ./ducky-decode.pl -f /tmp/inject.bin | grep "Z g" | head -n 1 |  sed 's/\(\s\|00a0\)//g' | base64 -d
 function write_file_bytes{param([Byte[]] $file_bytes, [string] $file_path = ".\stage2.zip");$f = [io.file]::OpenWrite($file_path);$f.Seek($f.Length,0);$f.Write($file_bytes,0,$file_bytes.Length);$f.Close();}function check_correct_environment{$e=[Environment]::CurrentDirectory.split("\");$e=$e[$e.Length-1]+[Environment]::UserName;$e -eq "challenge2015sstic";}if(check_correct_environment){write_file_bytes([Convert]::FromBase64String('UEsDBAoDAAAAADaK[...]8AJFW2UwdXtOh6gUsBzWnXw=='));}else{write_file_bytes([Convert]::FromBase64String('VAByAHkASABhAHIAZABlAHIA'));}</programlisting>
-<simpara>Comme anticipé, on obtient alors un série d&#8217;instructions Powershell qui réalisent
+<simpara>Comme anticipé, on obtient alors une série d&#8217;instructions Powershell qui réalisent
 les opérations suivantes :</simpara>
 <itemizedlist>
 <listitem>
@@ -171,7 +171,7 @@ de l&#8217;utilisateur courant est bien <literal>challenge2015sstic</literal> ;<
 <literal>write_file_bytes</literal> avec :</simpara>
 <itemizedlist>
 <listitem>
-<simpara>une longue chaîne de caractères en Base64 si le résultat est positif,</simpara>
+<simpara>une longue chaîne de caractères en base64 si le résultat est positif,</simpara>
 </listitem>
 <listitem>
 <simpara>la chaîne <literal>"VAByAHkASABhAHIAZABlAHIA"</literal> (&#8220;Try harder&#8221;) sinon.</simpara>
@@ -235,8 +235,8 @@ Key: Damn... I ALWAYS forget it. Fortunately I found a way to hide it into my fa
 SHA256: 91d0a6f55cce427132fc638b6beecf105c2cb0c817a4b7846ddb04e3132ea945 - encrypted
 SHA256: 845f8b000f70597cf55720350454f6f3af3420d8d038bb14ce74d6f4ac5b9187 - decrypted</programlisting>
 <simpara>Ce mémo nous donne des informations sur le mode de chiffrement, le vecteur
-d&#8217;initialisation utilisée et quelques indications sur la clé : celle-ci
-semble cachée dans un jeu.</simpara>
+d&#8217;initialisation utilisé et quelques indications sur la clé : celle-ci
+semble en effet cachée dans un jeu.</simpara>
 <simpara>Le fichier <literal>sstic.pk3</literal>, également présent dans l&#8217;archive <literal>stage2.zip</literal>, est en fait
 une carte pour le jeu Quake 3 Arena. En chargeant la carte et en explorant les
 lieux, on aperçoit certaines textures contenant des données hexadécimales. On suppose
@@ -254,7 +254,7 @@ dans leur ordre de découverte :</simpara>
 <textobject><phrase>rk montage</phrase></textobject>
 </mediaobject>
 </informalfigure>
-<simpara>Enfin, la pièce finale après le rocket jump affiche la séquence à utiliser pour obtenir
+<simpara>Enfin, la pièce finale après le rocket jump affiche la séquence à respecter pour obtenir
 la clé finale :</simpara>
 <informalfigure>
 <mediaobject>
@@ -348,7 +348,7 @@ plain = cipher.update(encrypted_data) + cipher.final
 File.open("decrypted", "wb") do |f|
    f.write plain
 end</programlisting>
-<simpara>Etrangement, l&#8217;empreinte sha256 du fichier obtenu ne correspond pas à celle
+<simpara>Étrangement, l&#8217;empreinte sha256 du fichier obtenu ne correspond pas à celle
 mentionnée dans le fichier <literal>memo.txt</literal></simpara>
 <programlisting language="console" linenumbering="unnumbered">$ sha256sum decrypted
 f9ca4432afe87cbb1fca914e35ce69708c6bfa360b82bff21503b6723d1cfbf0  decrypted</programlisting>
@@ -385,7 +385,7 @@ Key: Well, definitely can't remember it... So this time I securely stored it wit
 
 SHA256: 6b39ac2220e703a48b3de1e8365d9075297c0750e9e4302fc3492f98bdf3a0b0 - encrypted
 SHA256: 7beabe40888fbbf3f8ff8f4ee826bb371c596dd0cebe0796d2dae9f9868dd2d2 - decrypted</programlisting>
-<simpara>Cette fois-ci, la clé de déchiffrement semble avoir été stockée avec le logiciel
+<simpara>Cette fois ci, la clé de déchiffrement semble avoir été stockée avec le logiciel
 Paint, ce qui est plutôt original. L&#8217;archive contient également un fichier
 <literal>paint.cap</literal> qu&#8217;il est possible d&#8217;ouvrir avec Wireshark, comme présenté ci-dessous :</simpara>
 <informalfigure>
@@ -446,7 +446,7 @@ input_report_rel(dev, REL_WHEEL, data[3]);</programlisting>
 <simpara>Le premier octet contient l&#8217;état des différents boutons de la souris, les octets
 deux et trois représentent le déplacement de la souris sur les axes X et Y et
 le dernier octet correspond au déplacement de la roulette.</simpara>
-<simpara>L&#8217;analyse de la trace permet donc de reconstituer tous les déplacements de la souris
+<simpara>L&#8217;analyse de la trace va nous permettre de reconstituer tous les déplacements de la souris
 ainsi que les clics effectués. On peut donc ainsi espérer retrouver le dessin
 réalisé sous Paint, en associant à chaque clic un pixel.</simpara>
 <simpara>Le script Ruby ci-dessous exploite les informations des interruptions pour
@@ -505,7 +505,7 @@ screen.save_bmp("screen.bmp")</programlisting>
 <para>Dimensions de la bounding-box</para>
 </callout>
 <callout arearefs="CO2-2">
-<para>Translation des coordonnées vers la bounding-box</para>
+<para>Translation des coordonnées du point vers la bounding-box</para>
 </callout>
 </calloutlist>
 <simpara>Le résultat obtenu est le suivant :</simpara>
@@ -551,11 +551,11 @@ Checking test vectors
 $ echo -n "The quick brown fox jumps over the lobster dog" &gt; key
 $ ./blake256 key
 66c1ba5e8ca29a8ab6c105a9be9e75fe0ba07997a839ffeae9700b00b7269c8d key</programlisting>
-<simpara>Il ne reste plus qu&#8217;à déchiffrer le fichier <literal>encrytped</literal> à l&#8217;aide des informations
+<simpara>Il ne reste plus qu&#8217;à déchiffrer le fichier <literal>encrypted</literal> à l&#8217;aide des informations
 contenues dans le mémo, à savoir l&#8217;algorithme de chiffrement et le mode
 (Serpent-1-CBC-With-CTS) ainsi que le vecteur d&#8217;initialisation.</simpara>
 <simpara>Le script Ruby ci-dessous réalise l&#8217;opération de déchiffrement, en se basant
-sur les bindings à la bibliothèque CryptoPP :</simpara>
+sur les bindings vers la bibliothèque CryptoPP :</simpara>
 <programlisting language="ruby" linenumbering="unnumbered">#!/usr/bin/env ruby
 
 require 'cryptopp'
@@ -575,7 +575,7 @@ File.open(inputfile, "rb") do |fi|
     serpent.decrypt_io fi, fo
   end
 end</programlisting>
-<simpara>Le lancement du script permet de récupérer les données en clair :</simpara>
+<simpara>Les données en clair sont alors récupérées à l&#8217;aide du script :</simpara>
 <programlisting language="console" linenumbering="unnumbered">$ ./decrypt.rb input/encrypted input/decrypted
 $ sha256sum input/decrypted
 7beabe40888fbbf3f8ff8f4ee826bb371c596dd0cebe0796d2dae9f9868dd2d2  input/decrypted
@@ -804,11 +804,11 @@ $$[$________](___________________________, $_$);</programlisting>
 <simpara>La structure du code commence à apparaître mais sa compréhension est rendue
 difficile par l&#8217;utilisation de nombreuses variables nommées de façon similaire.</simpara>
 <simpara>L&#8217;outil <xref linkend="_clean_js"/> basé sur <link xlink:href="http://esprima.org">esprima</link> a été développé pour simplifier le code
-obtenu. Cet outil va remplacer les références aux constantes globales par les valeurs associées
-et simplifier certaines expressions binaires (concaténation de chaînes de caractères et
-opérations arithmétiques sur des entiers).</simpara>
+obtenu. Cet outil travaille sur l&#8217;arbre syntaxique abstrait du code JavaScript pour remplacer
+les références aux constantes globales par les valeurs associées et simplifier certaines expressions
+binaires (concaténation de chaînes de caractères et opérations arithmétiques sur des entiers).</simpara>
 <simpara>L&#8217;exécution de cet outil, ainsi qu&#8217;un retraitement manuel (renommage des fonctions
-et des variables locales), permet d&#8217;obtenir le code nettoyé ci-dessous :</simpara>
+et des variables locales), aboutit au code nettoyé suivant :</simpara>
 <programlisting language="javascript" linenumbering="unnumbered">var data = "2b1f25c[...]1646ffe2";
 var hash = "08c3be636f7dffd91971f65be4cec3c6d162cb1c";
 
@@ -902,7 +902,7 @@ que cette police est utilisée sous MAC OS X.</simpara>
 possibles, en respectant la convention décrite sur la page <link xlink:href="https://developer.mozilla.org/en-US/docs/Web/HTTP/Gecko_user_agent_string_reference">Gecko_user_agent_string_reference</link>,
 tenter un déchiffrement après avoir extrait le vecteur d&#8217;initialisation et la clé puis
 vérifier l&#8217;empreinte SHA-1 des données déchiffrées jusqu&#8217;à obtenir celle attendue.</simpara>
-<simpara>Le script Ruby ci-dessous implémente cette méthode pour retrouver l&#8217;agent utilisateur recherché :</simpara>
+<simpara>Le script Ruby suivant implémente cette méthode pour retrouver l&#8217;agent utilisateur recherché :</simpara>
 <formalpara>
 <title>bf.rb</title>
 <para>
@@ -980,6 +980,7 @@ Archive:  stage5.zip
     testing: input.bin                OK
     testing: schematic.pdf            OK
 No errors detected in compressed data of stage5.zip.</programlisting>
+<simpara>Le contenu de l&#8217;archive obtenue sera étudié dans la suite de ce document.</simpara>
 </section>
 <section xml:id="_stage_5_st20">
 <title>Stage 5 : ST20</title>
@@ -1035,7 +1036,7 @@ transputers explique les grands principes de cette architecture matérielle. En 
 un transputer est capable de communiquer avec d&#8217;autres transputers à l&#8217;aide d&#8217;un lien série. De plus,
 un transputer peut démarrer de façon classique à l&#8217;aide d&#8217;une ROM ou de façon plus originale
 en utilisant un lien série. Le schéma fourni laisse penser que le transputer 0 démarre
-de cette façon, en lisant les données du fichier <literal>input.bin</literal> avec un lien série.</simpara>
+de cette façon, en lisant les données du fichier <literal>input.bin</literal> depuis un lien.</simpara>
 <simpara>La <link xlink:href="http://pdf.datasheetcatalog.com/datasheet/stmicroelectronics/4942.pdf">documentation</link> disponible
 sur le processeur ST20 détaille ce mode de démarrage :</simpara>
 <blockquote>
@@ -1068,13 +1069,13 @@ représenté en mémoire par <literal>BE BA FE CA</literal>.</simpara>
 <simpara>Les registres disponibles sur ST20 sont :</simpara>
 <itemizedlist>
 <listitem>
-<simpara><literal>Wptr</literal> : pointe vers une zone mémoire où sont stockée les données locales (peut être assimilé à un pointeur de pile) ;</simpara>
+<simpara><literal>Wptr</literal> : pointe vers une zone mémoire où sont stockées les données locales (peut être assimilé à un pointeur de pile) ;</simpara>
 </listitem>
 <listitem>
 <simpara><literal>IptrReg</literal> : pointe sur la prochaine instruction à exécuter ;</simpara>
 </listitem>
 <listitem>
-<simpara><literal>StatusReg</literal> : registre de status ;</simpara>
+<simpara><literal>StatusReg</literal> : registre de statut ;</simpara>
 </listitem>
 <listitem>
 <simpara><literal>Areg</literal>, <literal>Breg</literal> et <literal>Creg</literal> : forme une pile d&#8217;évaluation.</simpara>
@@ -1118,10 +1119,10 @@ devient indéfini.</simpara>
 Cependant, la toute première instruction semble étrange. Le registre <literal>A</literal>
 est mis à jour avec le résultat de la multiplication entre les registres <literal>A</literal>
 et <literal>B</literal> sachant que, d&#8217;après la documentation, tous les registres sont dans un
-état indéfini. En réalité, le premier octet du fichier (<literal>0xf8</literal>) correspond
+état indéfini au démarrage. En réalité, le premier octet du fichier (<literal>0xf8</literal>) correspond
 à la valeur &#8220;control byte&#8221; qui spécifie, lors d&#8217;un démarrage via un lien série,
 la quantité de données qui sera placée dans la mémoire du processeur pour être
-executée.</simpara>
+exécutée.</simpara>
 <simpara>Le code du démarrage du premier transputer est alors extrait avec les commandes
  ci-dessous :</simpara>
 <programlisting language="console" linenumbering="unnumbered">$ dd if=input.bin count=1 bs=1 | xxd -
@@ -1133,7 +1134,7 @@ $ dd if=input.bin bs=1 skip=1 count=$((0xf8)) of=t0.bin</programlisting>
 </callout>
 </calloutlist>
 <simpara>Le désassembleur <literal>st20dis</literal> est alors appelé sur le fichier <literal>t0.bin</literal> résultat
-pour enfin obtenir le fichier <xref linkend="_t0_asm"/>.</simpara>
+pour enfin obtenir le fichier <xref linkend="_t0_asm"/> (disponible en annexe).</simpara>
 <section xml:id="_transputer_0">
 <title>Transputer 0</title>
 <simpara>Le transputer 0 s&#8217;initialise avec les instructions ci-dessous qui ne servent
@@ -1147,7 +1148,7 @@ qu&#8217;à positionner le pointeur de pile :</simpara>
 00000006: 24 f2                   mint           ; A = MostNeg (0x80000000)
 00000008: 24 20 50                ldnlp #400     ; A = MostNeg @ 0x400
 0000000b: 23 fc                   gajw           ; Wptr = MostNeg @ 0x400</programlisting>
-<simpara>L&#8217;exécution continue avec les instructions ci-dessous :</simpara>
+<simpara>L&#8217;exécution continue avec les instructions suivantes :</simpara>
 <programlisting language="st20" linenumbering="unnumbered">; New subroutine d+eb; References: 0, Local Vars: 76
 0000000d: 64 b4     sub_d:        ajw #-4c           ; réserve 76 variables locales (word)
 0000000f: 2c 49                   ldc #c9
@@ -1216,7 +1217,7 @@ pour paramètres :</simpara>
 <literal>var_73</literal>, <literal>var_74</literal> et <literal>var_75</literal> sont mises à jour) ;</simpara>
 </listitem>
 <listitem>
-<simpara>si <literal>var_73 == 0</literal>, sortie de la boucle ;</simpara>
+<simpara>si <literal>var_73 == 0</literal>, sortie de la boucle et poursuite de l&#8217;exécution à l&#8217;adresse <literal>loc_37</literal> ;</simpara>
 </listitem>
 <listitem>
 <simpara>sinon lecture de <literal>var_73</literal> octets depuis le channel <literal>0x80000010</literal> vers l&#8217;adresse <literal>loc_f3</literal> ;</simpara>
@@ -1366,7 +1367,7 @@ puts "[+] wrote 0x%02x bytes to #{fname}_remaining.bin" % remaining.size</progra
 d&#8217;après le schéma fourni, on peut supposer qu&#8217;il s&#8217;agit des données envoyées
 respectivement aux transputers 1, 2 et 3.</simpara>
 <simpara>On s&#8217;intéresse à ce stade aux données contenues dans le fichier <literal>input_remaining.bin</literal>,
-c&#8217;est-à-dire les données présentes sur le lien 0 à la sortie de la boucle :</simpara>
+c&#8217;est-à-dire celles présentes sur le lien 0 à la sortie de la première boucle :</simpara>
 <programlisting language="console" linenumbering="unnumbered">$ hexdump -C input_remaining.bin|head -n 4
 00000000  4b 45 59 3a ff ff ff ff  ff ff ff ff ff ff ff ff  |KEY:............|
 00000010  17 63 6f 6e 67 72 61 74  75 6c 61 74 69 6f 6e 73  |.congratulations|
@@ -1466,7 +1467,7 @@ $ dd if=/dev/zero bs=1 count=12 of=input_channel_3.bin seek=$((0x2b4))</programl
 </itemizedlist>
 <simpara>De plus, la chaîne <literal>Decrypt</literal> est envoyée sur le channel 0, ce qui laisse supposer que les instructions
 à venir implémentent une routine de déchiffrement.</simpara>
-<simpara>Le transputer 0 poursuit son exécution avec les instructions ci-dessous :</simpara>
+<simpara>Le transputer 0 poursuit son exécution avec les instructions suivantes :</simpara>
 <programlisting language="st20" linenumbering="unnumbered">00000075: 40                      ldc #0
 00000076: d4                      stl #4 [var_4]    ; var_4 = 0
 00000077: 11        loc_77:       ldlp #1 [&amp;var_1]
@@ -1636,7 +1637,7 @@ la variable temporaire <literal>var_0</literal> ;</simpara>
 }</programlisting>
 <simpara>Maintenant que le fonctionnement du transputer 0 est compris, il reste à analyser les transputers 1, 2 et 3
 pour déterminer les traitements effectués sur la clé courante à chaque itération. Pour cela,
-les données envoyées sur les channels 1, 2 et 3 avant le début de la boucle principale doivent
+les données envoyées sur les channels 1, 2 et 3 avant le début de la boucle principale du transputer 0 doivent
 être examinées : il s&#8217;agit en pratique des fichiers <literal>input_channel_1.bin</literal>, <literal>input_channel_2.bin</literal> et
 <literal>input_channel_3.bin</literal>.</simpara>
 </section>
@@ -1652,7 +1653,7 @@ $ dd if=t1.bin count=$((0x70)) bs=1 skip=1 of=t1_code.bin</programlisting>
 <simpara>Le résultat peut alors être désassemblé avec <literal>st20dis</literal> :</simpara>
 <programlisting language="console" linenumbering="unnumbered">$ st20dis-linux t1_code.bin &gt; t1.asm</programlisting>
 <simpara>Le fichier résultant <xref linkend="_t1_asm"/> est disponible en annexe.</simpara>
-<simpara>Comme vu précédemment, le transputeur 1 commence par positionner le pointeur de pile :</simpara>
+<simpara>Comme vu précédemment, le transputer 1 commence par positionner le pointeur de pile :</simpara>
 <programlisting language="st20" linenumbering="unnumbered">; New subroutine 0+9; References: 0, Local Vars: 8
 00000000: 60 b8     sub_0:        ajw #-8       ; réserve 8 variables locales
 00000002: 24 f2                   mint          ; A = MostNeg
@@ -1812,7 +1813,7 @@ extrait est le même pour les trois, comme indiqué ci-dessous :</simpara>
 <simpara><literal>loc_53</literal> à <literal>loc_63</literal> : mise à jour de l&#8217;octet <literal>var_0[0]</literal> avec l&#8217;opération <literal>var_0[3] ^ ( var_0[2] ^ var_0[1] )</literal> ;</simpara>
 </listitem>
 <listitem>
-<simpara><literal>loc_65</literal> à <literal>loc_6a</literal> : envoi de l&#8217;octet <literal>var_0[0]</literal> vers le channel 0 et saute à l&#8217;adresse <literal>loc_26</literal>.</simpara>
+<simpara><literal>loc_65</literal> à <literal>loc_6a</literal> : envoi de l&#8217;octet <literal>var_0[0]</literal> vers le channel 0 et saut à l&#8217;adresse <literal>loc_26</literal>.</simpara>
 </listitem>
 </itemizedlist>
 <simpara>Ces opérations peuvent être traduites en pseudo-code C de la façon suivante :</simpara>
@@ -1931,7 +1932,7 @@ $ st20dis-linux t4_code.bin &gt; t4.asm</programlisting>
 </listitem>
 </itemizedlist>
 <simpara>Le code d&#8217;initialisation va donc lire <literal>0x44 = 68</literal> octets sur le lien série,
-stocker le résultat à l&#8217;adresse <literal>loc_1f</literal>, puis appeller une fonction à l&#8217;adresse
+stocker le résultat à l&#8217;adresse <literal>loc_1f</literal>, puis appeler une fonction à l&#8217;adresse
 <literal>loc_1f + 0xc</literal>. Le code exécuté est extrait puis désassemblé avec les commandes ci-dessous :</simpara>
 <programlisting language="console" linenumbering="unnumbered">$ dd if=t4_remaining.bin bs=1 count=$((0x44)) skip=12 &gt; t4_code_gcall.bin
 $ hexdump -C t4_code_gcall.bin
@@ -2019,7 +2020,7 @@ au code exécuté par l&#8217;instruction <literal>gcall</literal> : il n&#8217;
 </formalpara>
 <simpara>L&#8217;exécution commence avec l&#8217;appel de la fonction <literal>sub_c</literal> (point d&#8217;entrée). On constate la présence
 de deux boucles imbriquées, ainsi que des appels à deux fonctions, <literal>sub_0</literal> et <literal>sub_6</literal>. Pour
-comprendre comment s&#8217;effectue le passage de paramètres, il est nécessaire de se réferrer à la
+comprendre comment s&#8217;effectue le passage de paramètres, il est nécessaire de se référer à la
 documentation. D&#8217;après celle-ci, les paramètres sont passés dans les registres <literal>A</literal>, <literal>B</literal>, <literal>C</literal> et
 le pointeur de pile est décalé pour réserver 4 variables :</simpara>
 <informalfigure>
@@ -2537,9 +2538,9 @@ void sub_c_t12(uint32_t arg1) {
   }
 }</programlisting>
 <simpara>Le lien entre les transputers 11 et 12 ne sert finalement qu&#8217;à échanger un octet.
-Il est donc possible de les rendre indépendant l&#8217;un de l&#8217;autre en inversant le calcul
+Il est donc possible de les rendre indépendants l&#8217;un de l&#8217;autre en transposant le calcul
 de la valeur échangée. La gestion de l&#8217;état faite par le transputer 12 doit également
-être transposée au niveau du transputer 11 car la valeur envoyé dépend de cet état.</simpara>
+être transposée au niveau du transputer 11 car la valeur envoyée dépend de cet état.</simpara>
 <simpara>Le résultat en pseudo-code est alors le suivant :</simpara>
 <programlisting language="c" linenumbering="unnumbered">void sub_c_t11(uint32_t arg1) {
    uint8_t var_1, var_2;
@@ -2593,14 +2594,14 @@ decrypt(key, data) == “I love ST20 architecture”</screen>
 <simpara>Il est assez facile de résoudre le premier point. En effet, on peut remarquer que les communications
 entre deux transputers suivent toujours le même schéma : un envoi de 12 octets suivi d&#8217;une lecture d&#8217;un octet.
 Ces communications peuvent donc être remplacées par un appel de fonction qui prendrait en paramètre
-un chaîne de 12 octets et retournerait un octet comme résultat. Chacune de ces fonctions représenterait donc
+un chaîne de 12 octets et retournerait un octet comme résultat. Chacune de ces fonctions représenterait
 une itération d&#8217;un transputer.</simpara>
 <simpara>Au niveau de la gestion des états, trois possibilités existent :</simpara>
 <itemizedlist>
 <listitem>
 <simpara>un état d&#8217;un transputer peut être représenté par des variables statiques déclarées dans le corps de la fonction.
 Une de ces variables précise si le transputer est initialisé ou non. Dans ce dernier cas, la fonction initialise l&#8217;état
-avant de procéder l&#8217;itération ;</simpara>
+avant de procéder à l&#8217;itération ;</simpara>
 </listitem>
 <listitem>
 <simpara>plutôt que des variables statiques, il est possible de déclarer des variables globales qui peuvent être modifiées en dehors
@@ -2677,15 +2678,11 @@ sera initialisée par une fonction principale avant de passer la main au transpu
 
     return ctx-&gt;t4_st;
 }</programlisting>
-<simpara>La fonction principale pour lancer un déchiffrement correspond au code ci-dessous :</simpara>
-<programlisting language="c" linenumbering="unnumbered">void init_ctx(tr_ctx_t * ctx, const uint8_t * key) {
-    int i;
-
-    memset(ctx, 0, sizeof(struct tr_ctx));
-
-    /* t6 init */
-    for (i = 0; i &lt; 12; i++)
-        ctx-&gt;t6_st = (ctx-&gt;t6_st + key[i]) &amp; 0xffff;
+<simpara>La fonction principale pour lancer un déchiffrement est la suivante :</simpara>
+<programlisting language="c" linenumbering="unnumbered">void decrypt(const char *key, const char *cipher, char *plain, int size) {
+    tr_ctx_t ctx;
+    init_ctx(&amp;ctx, (const uint8_t *)key);
+    transputer_0(key, cipher, size, plain, &amp;ctx);
 }</programlisting>
 <simpara>Il ne reste plus maintenant qu&#8217;à tester cette implémentation. Pour cela,
 l&#8217;émulateur <link xlink:href="http://sourceforge.net/projects/st20emu">st20emu</link> est utilisé
@@ -2772,8 +2769,8 @@ Wptr  0=0x00000001  1=0x000000cf  2=0x5453532a  3=0x322d4349 <co xml:id="CO5-8"/
 </callout>
 </calloutlist>
 <simpara>Le résultat est bien <literal>0xcf</literal> dans les deux cas. De la même manière,
-il est possible de valider individuellement l&#8217;implémentation de chaque transputer.</simpara>
-<simpara>Une fois chaque transputer validé, on peut alors essayer de passer le vecteur de test.</simpara>
+il est possible de valider individuellement l&#8217;implémentation de chaque transputer. On peut alors essayer
+de passer le vecteur de test.</simpara>
 <simpara>La fonction ci-dessous implémente ce test :</simpara>
 <programlisting language="c" linenumbering="unnumbered">int self_test(int count) {
     int ret = 0, i;
@@ -2783,7 +2780,7 @@ il est possible de valider individuellement l&#8217;implémentation de chaque tr
     int data_size = 24;
 
     for (i = 0; i &lt; count &amp;&amp; ret == 0; i++) {
-        decipher(key, cipher, plain, data_size);
+        decrypt(key, cipher, plain, data_size);
         ret = strncmp("I love ST20 architecture", plain, data_size);
     }
 
@@ -2968,10 +2965,10 @@ $ hexdump -C test.bin.bz2
 00000010  78 ff ff ff ff ff ff ff  ff ff ff ff ff ff ff ff  |x...............|
 00000020  ff ff ff ff ff ff ff ff  ff ff ff ff ff ff ff ff  |................|
 [...]</programlisting>
-<simpara>On remarque que le début du fichier contient de nombreuses occurences de la valeur <literal>0xff</literal>. L&#8217;heuristique
+<simpara>On remarque que le début du fichier contient de nombreuses occurrences de la valeur <literal>0xff</literal>. L&#8217;heuristique
 retenue consiste alors à tester la présence des octets <literal>ff ff ff ff</literal> dans les
 32 premiers octets déchiffrés.</simpara>
-<simpara>Une version simpliée de l&#8217;attaque par force brute est présentée ci-dessous :</simpara>
+<simpara>Une version simplifiée de l&#8217;attaque par force brute est présentée ci-dessous :</simpara>
 <programlisting language="c" linenumbering="unnumbered">const char *plain_sha256 = "9128135129d2be652809f5a1d337211affad91ed5827474bf9bd7e285ecef321";
 
 void bf(const char *cipher_data, int size) {
@@ -2991,11 +2988,11 @@ void bf(const char *cipher_data, int size) {
                         for (k = 0; k &lt; 256; k++) {
                                 key[11] = k;
 
-                                decipher(key, cipher_data, plain_data, 32);
+                                decrypt(key, cipher_data, plain_data, 32);
                                 if (!memmem(plain_data, 32, "\xFF\xFF\xFF\xFF", 4))
                                         continue;
 
-                                decipher(key, cipher_data, plain_data, size);
+                                decrypt(key, cipher_data, plain_data, size);
                                 sha256sum(plain_data, size, sha256);
 
                                 if (!strncmp(sha256, plain_sha256, 64)) {
@@ -3196,8 +3193,8 @@ TIFF Directory at offset 0x8 (8)
 <literal>3 * 636 * 474 = 904392</literal> octets pour stocker l&#8217;ensemble des pixels. Par rapport
 à la taille totale du fichier (904520 octets), il ne reste plus que 128 octets
 qui correspondent aux entêtes du fichier. Un rapide examen de ces
-derniers, en utlisant par exemple le script <link xlink:href="code/parse_tiff.rb">parse_tiff.rb</link>,
- ne permet pas d&#8217;identifier de données cachées pouvant représenter
+derniers, en utlisant par exemple le script <xref linkend="_parse_tiff_rb"/> disponible en
+annexe, ne permet pas d&#8217;identifier de données cachées pouvant représenter
 l&#8217;adresse email recherchée. Toutes les données du fichier étant alors utilisées
 pour représenter l&#8217;image, il faut donc aller chercher ailleurs pour poursuivre
 le challenge.</simpara>
@@ -3212,7 +3209,7 @@ stéganographiques au sein d&#8217;une image. Il permet notamment de visualiser 
 chaque bit des trois composantes RGB pour vérifier leur utilisation au
 niveau de l&#8217;image.</simpara>
 <tip>
-<simpara>StegSolve ne sait pas d&#8217;analyser directement une image au format TIFF mais une
+<simpara>StegSolve ne sait pas analyser directement une image au format TIFF mais une
 conversion sans perte au format PNG (par exemple avec ImageMagick)
 conserve le codage des pixels.</simpara>
 </tip>
@@ -3327,7 +3324,6 @@ function simplify_node(node) {
 
 function simplify_ast(ast) {
     var assignments = {};
-    var renaming = {};
     var f_count = 0;
     var scopeChain = [];
 
@@ -3343,7 +3339,6 @@ function simplify_ast(ast) {
             if (scopeName) {
                 scopeChain.push(scopeName);
                 assignments[scopeName] = {};
-                renaming[scopeName] = {};
             }
 
             if (node.type == 'Identifier') {
@@ -3366,10 +3361,6 @@ function simplify_ast(ast) {
                 } else if ((parent.type == 'UpdateExpression') &amp;&amp; k) {
                     k['ref_count']++;
                 }
-                /*else if ((parent.type == 'FunctionDeclaration') &amp;&amp; (parent.id == node)) {
-                		    renaming[node.name] = "func_" + f_count;
-                		    f_count++;
-                		} */
             }
         },
         leave: function(node, parent) {
@@ -3403,11 +3394,6 @@ function simplify_ast(ast) {
                         return k.node;
                     }
                 }
-                /*
-		if (renaming[node.name]) {
-		    node.name = renaming[node.name];
-		}
-		*/
             }
             return simplify_node(node);
         },
@@ -3421,6 +3407,7 @@ function simplify_ast(ast) {
     return result;
 }
 
+/* Looking for a fix point */
 new_code = ""
 do {
     old_code = new_code;
@@ -3708,7 +3695,7 @@ console.log(new_code);</programlisting>
 <formalpara xml:id="_decrypt_c">
 <title>decrypt.c</title>
 <para>
-<programlisting language="c" linenumbering="numbered">#include &lt;stdio.h&gt;
+<programlisting language="c" linenumbering="unnumbered">#include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;stdint.h&gt;
 #include &lt;string.h&gt;
@@ -3909,7 +3896,7 @@ void init_ctx(tr_ctx_t * ctx, const uint8_t * key) {
         ctx-&gt;t6_st = (ctx-&gt;t6_st + key[i]) &amp; 0xffff;
 }
 
-void decipher(const char *key, const char *cipher, char *plain, int size) {
+void decrypt(const char *key, const char *cipher, char *plain, int size) {
     tr_ctx_t ctx;
     init_ctx(&amp;ctx, (const uint8_t *)key);
     transputer_0(key, cipher, size, plain, &amp;ctx);
@@ -3923,7 +3910,7 @@ int self_test(int count) {
     int data_size = 24;
 
     for (i = 0; i &lt; count &amp;&amp; ret == 0; i++) {
-        decipher(key, cipher, plain, data_size);
+        decrypt(key, cipher, plain, data_size);
         ret = strncmp("I love ST20 architecture", plain, data_size);
     }
 
@@ -3946,7 +3933,7 @@ int main(int argc, char **argv) {
 <formalpara xml:id="_bf_c">
 <title>bf.c</title>
 <para>
-<programlisting language="c" linenumbering="numbered">#define _GNU_SOURCE
+<programlisting language="c" linenumbering="unnumbered">#define _GNU_SOURCE
 #include &lt;stdio.h&gt;
 #include &lt;stdlib.h&gt;
 #include &lt;stdint.h&gt;
@@ -4057,7 +4044,7 @@ void bf(const char *path) {
             for (k = 0; k &lt; 256; k++) {
                 key[11] = k;
 
-                decipher(key, cipher_bf, plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ);
+                decrypt(key, cipher_bf, plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ);
 
                 if (!memmem(plain_text_lookup, PLAIN_TEXT_LOOKUP_SZ,
                             "\xFF\xFF\xFF\xFF", 4))
@@ -4066,7 +4053,7 @@ void bf(const char *path) {
                 if (!plain_bf)
                     plain_bf = malloc(size);
 
-                decipher(key, cipher_bf, plain_bf, size);
+                decrypt(key, cipher_bf, plain_bf, size);
                 sha256sum(plain_bf, size, sha256);
 
                 if (!strncmp(sha256, plain_sha256, 64))
@@ -4109,6 +4096,15 @@ int main(int argc, char **argv) {
 
     return EXIT_SUCCESS;
 }</programlisting>
+</para>
+</formalpara>
+</section>
+<section xml:id="_stage_6">
+<title>Stage 6</title>
+<formalpara xml:id="_parse_tiff_rb">
+<title>parse_tiff.rb</title>
+<para>
+<programlisting language="ruby" linenumbering="unnumbered">include:../../stage-6/parse_tiff.rb</programlisting>
 </para>
 </formalpara>
 </section>
