@@ -38,11 +38,11 @@ namespace :sstic do
     puts " -- HTML output at main.html"
 
     puts "Converting to EPub..."
-    #`bundle exec asciidoctor-epub3 main.asc`
+    `bundle exec asciidoctor-epub3 main.asc`
     puts " -- Epub output at main.epub"
 
     puts "Converting to PDF ..."
-    # `bundle exec asciidoctor-pdf main.asc`
+    `bundle exec asciidoctor-pdf main.asc`
     puts " --PDF output at main.pdf"
 
     puts "Converting to Docbook ..."
