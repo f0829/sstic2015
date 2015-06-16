@@ -34,16 +34,18 @@ namespace :sstic do
   task :build => :prebuild do
     puts "Converting to HTML ..."
     `bundle exec asciidoctor main.asc`
+    `bundle exec asciidoctor main.en.asc`
     add_video_format("main.html")
+    add_video_format("main.en.html")
     puts " -- HTML output at main.html"
 
     puts "Converting to EPub..."
-    `bundle exec asciidoctor-epub3 main.asc`
-    puts " -- Epub output at main.epub"
+    #`bundle exec asciidoctor-epub3 main.asc`
+    #puts " -- Epub output at main.epub"
 
     puts "Converting to PDF ..."
-    `bundle exec asciidoctor-pdf main.asc`
-    puts " --PDF output at main.pdf"
+    #`bundle exec asciidoctor-pdf main.asc`
+    #puts " --PDF output at main.pdf"
 
     puts "Converting to Docbook ..."
     #`bundle exec asciidoctor -b docbook  -a data-uri! main.asc`
